@@ -1,0 +1,837 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Guarda-Chuvas Evolutivo PRO</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            font-family: 'Arial', sans-serif;
+            transition: background 1.5s ease;
+            background: radial-gradient(ellipse at center, #1a2a6c 0%, #2a3a7c 100%);
+            touch-action: manipulation;
+        }
+        canvas { 
+            display: block; 
+            touch-action: none;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+            transition: text-shadow 1s ease;
+        }
+        #level-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+        }
+        #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: white;
+        }
+        #restart-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 20px;
+            background: #FF5252;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        ☂️ <span id="score">0</span> | ❤️ <span id="lives">6</span> | 🏆 <span id="highscore">0</span>
+    </div>
+    <div id="level-indicator">Nível: Terra</div>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="game-over">
+        <h1>FIM DE JOGO</h1>
+        <p id="final-score">Pontuação: 0</p>
+        <p id="final-level">Nível alcançado: Terra</p>
+        <button id="restart-btn">Jogar Novamente</button>
+    </div>
+
+    <script>
+        // ===== CONFIGURAÇÕES GERAIS =====
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const levelElement = document.getElementById('level-indicator');
+        const uiElement = document.getElementById('ui');
+        const highscoreElement = document.getElementById('highscore');
+        const gameOverScreen = document.getElementById('game-over');
+        const finalScoreElement = document.getElementById('final-score');
+        const finalLevelElement = document.getElementById('final-level');
+        const restartBtn = document.getElementById('restart-btn');
+        
+        // Variáveis de estado do jogo
+        let score = 0;
+        let lives = 6;
+        let currentLevel = 'earth';
+        let transitionActive = false;
+        let transitionProgress = 0;
+        let highscore = localStorage.getItem('highscore') || 0;
+        let lastTime = 0;
+        const fps = 60;
+        let gameActive = true;
+
+        // Ajuste de tela
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        // ===== SISTEMA DE NÍVEIS =====
+        function checkLevelTransition() {
+            if (score >= 400 && currentLevel === 'earth' && !transitionActive) {
+                startTransition('space');
+            } else if (score >= 10000 && currentLevel === 'space' && !transitionActive) {
+                startTransition('hell');
+            } else if (score >= 20000 && currentLevel === 'hell' && !transitionActive) {
+                startTransition('water');
+            }
+        }
+
+        function startTransition(newLevel) {
+            transitionActive = true;
+            const oldLevel = currentLevel;
+            currentLevel = 'transition';
+            
+            if (newLevel === 'space') {
+                levelElement.textContent = "Nível: Transição para o Espaço!";
+                document.body.style.background = 'radial-gradient(ellipse at center, #000428 0%, #004e92 100%)';
+                uiElement.style.textShadow = '0 0 10px #00ffff, 0 0 20px #ff00ff';
+            } else if (newLevel === 'hell') {
+                levelElement.textContent = "Nível: Transição para o Inferno!";
+                document.body.style.background = 'radial-gradient(ellipse at center, #8B0000 0%, #FF4500 100%)';
+                uiElement.style.textShadow = '0 0 10px #ff0000, 0 0 20px #ff8c00';
+            } else if (newLevel === 'water') {
+                levelElement.textContent = "Nível: Transição para o Oceano!";
+                document.body.style.background = 'radial-gradient(ellipse at center, #00008B 0%, #1E90FF 100%)';
+                uiElement.style.textShadow = '0 0 10px #00bfff, 0 0 20px #1e90ff';
+            }
+            
+            setTimeout(() => completeTransition(newLevel), 1500);
+        }
+
+        function completeTransition(newLevel) {
+            currentLevel = newLevel;
+            transitionActive = false;
+            transitionProgress = 0;
+            
+            if (newLevel === 'space') {
+                levelElement.textContent = "Nível: Espaço Intergaláctico";
+                initializeSpaceElements();
+            } else if (newLevel === 'hell') {
+                levelElement.textContent = "Nível: Inferno";
+                initializeHellElements();
+            } else if (newLevel === 'water') {
+                levelElement.textContent = "Nível: Oceano Profundo";
+                initializeWaterElements();
+            }
+        }
+
+        // ===== ELEMENTOS DO NÍVEL TERRESTRE (Fácil) =====
+        let earthUmbrellas = [];
+        const earthUmbrellaColors = ['#FF5252', '#4285F4', '#FBBC05', '#34A853'];
+        let earthClouds = [];
+        let rainDrops = [];
+        const rainColor = 'rgba(174, 194, 224, 0.6)';
+
+        function initializeEarthElements() {
+            earthClouds = Array.from({ length: 5 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height * 0.6,
+                speed: 0.2 + Math.random() * 0.3, // Mais lento
+                size: 50 + Math.random() * 50,
+                opacity: 0.7 + Math.random() * 0.3
+            }));
+        }
+
+        function createEarthUmbrella() {
+            const speed = 1.5 + Math.random() * 2 + (score / 1000); // Velocidade reduzida
+            earthUmbrellas.push({
+                x: Math.random() * (canvas.width - 50),
+                y: -70,
+                speed: speed,
+                color: earthUmbrellaColors[Math.floor(Math.random() * earthUmbrellaColors.length)],
+                width: 50,
+                height: 80
+            });
+        }
+
+        // ===== ELEMENTOS DO NÍVEL ESPACIAL (Fácil) =====
+        let spaceUmbrellas = [];
+        const spaceUmbrellaColors = ['#ff00ff', '#00ffff', '#ffff00', '#ff00ff'];
+        let stars = [];
+        let nebulas = [];
+        let meteors = [];
+
+        function initializeSpaceElements() {
+            stars = Array.from({ length: 200 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2,
+                opacity: Math.random(),
+                speed: Math.random() * 0.2
+            }));
+
+            nebulas = Array.from({ length: 3 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height * 0.5,
+                radius: 100 + Math.random() * 200,
+                color: `hsla(${Math.random() * 360}, 80%, 60%, 0.1)`,
+                speed: Math.random() * 0.1 - 0.05
+            }));
+        }
+
+        function createSpaceUmbrella() {
+            const speed = 1.8 + Math.random() * 2.5 + (score / 1000); // Velocidade reduzida
+            spaceUmbrellas.push({
+                x: Math.random() * (canvas.width - 50),
+                y: -70,
+                speed: speed,
+                color: spaceUmbrellaColors[Math.floor(Math.random() * spaceUmbrellaColors.length)],
+                width: 50,
+                height: 80,
+                glow: 0
+            });
+        }
+
+        // ===== ELEMENTOS DO NÍVEL INFERNO (Difícil - 10.000 pontos) =====
+        let hellUmbrellas = [];
+        const hellUmbrellaColors = ['#FF0000', '#FF4500', '#FF8C00', '#B22222'];
+        let lavaBubbles = [];
+        let fireParticles = [];
+
+        function initializeHellElements() {
+            lavaBubbles = Array.from({ length: 20 }, () => ({
+                x: Math.random() * canvas.width,
+                y: canvas.height + Math.random() * 50,
+                size: 10 + Math.random() * 20,
+                speed: 1 + Math.random() * 3,
+                opacity: 0.3 + Math.random() * 0.7
+            }));
+        }
+
+        function createHellUmbrella() {
+            const speed = 3 + Math.random() * 4 + (score / 500); // Velocidade aumentada
+            hellUmbrellas.push({
+                x: Math.random() * (canvas.width - 50),
+                y: -70,
+                speed: speed,
+                color: hellUmbrellaColors[Math.floor(Math.random() * hellUmbrellaColors.length)],
+                width: 50,
+                height: 80,
+                onFire: true
+            });
+        }
+
+        // ===== ELEMENTOS DO NÍVEL ÁGUA (Difícil - 20.000 pontos) =====
+        let waterUmbrellas = [];
+        const waterUmbrellaColors = ['#00BFFF', '#1E90FF', '#4169E1', '#4682B4'];
+        let bubbles = [];
+        let fish = [];
+
+        function initializeWaterElements() {
+            bubbles = Array.from({ length: 30 }, () => ({
+                x: Math.random() * canvas.width,
+                y: canvas.height + Math.random() * 100,
+                size: 5 + Math.random() * 15,
+                speed: 1 + Math.random() * 2,
+                opacity: 0.4 + Math.random() * 0.6
+            }));
+        }
+
+        function createWaterUmbrella() {
+            const speed = 2.5 + Math.random() * 3.5 + (score / 500); // Velocidade moderada
+            waterUmbrellas.push({
+                x: Math.random() * (canvas.width - 50),
+                y: -70,
+                speed: speed,
+                color: waterUmbrellaColors[Math.floor(Math.random() * waterUmbrellaColors.length)],
+                width: 50,
+                height: 80,
+                bubbleTrail: true
+            });
+        }
+
+        // ===== FUNÇÕES DE DESENHO GENÉRICAS =====
+        function isClickInsideUmbrella(x, y, u) {
+            const centerX = u.x + u.width/2;
+            const centerY = u.y + u.width/2;
+            const radius = u.width/2;
+            return (
+                y > u.y && // Evita cliques acima do guarda-chuva
+                Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2) <= radius * 1.2 // 20% mais sensível
+            );
+        }
+
+        function drawEarthUmbrella(u) {
+            // Cabo
+            ctx.fillStyle = '#5D4037';
+            ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
+            
+            // Cúpula
+            ctx.fillStyle = u.color;
+            ctx.beginPath();
+            ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
+            ctx.fill();
+        }
+
+        function drawSpaceUmbrella(u) {
+            // Efeito de glow
+            ctx.shadowBlur = u.glow;
+            ctx.shadowColor = u.color;
+            
+            // Cabo
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
+            
+            // Cúpula
+            ctx.fillStyle = u.color;
+            ctx.beginPath();
+            ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
+            ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            u.glow = Math.min(20, u.glow + 0.5);
+        }
+
+        function drawHellUmbrella(u) {
+            // Cabo em chamas
+            ctx.fillStyle = '#FF4500';
+            ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
+            
+            // Cúpula flamejante
+            const gradient = ctx.createRadialGradient(
+                u.x + u.width/2, u.y + u.width/2, 0,
+                u.x + u.width/2, u.y + u.width/2, u.width/2
+            );
+            gradient.addColorStop(0, u.color);
+            gradient.addColorStop(1, '#FF8C00');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
+            ctx.fill();
+            
+            // Efeito de fogo
+            if (u.onFire) {
+                for (let i = 0; i < 3; i++) {
+                    ctx.fillStyle = `rgba(255, ${Math.floor(100 + Math.random() * 155)}, 0, ${Math.random() * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(
+                        u.x + u.width/2 + Math.random() * 20 - 10,
+                        u.y - 10 + Math.random() * 10,
+                        Math.random() * 8 + 2,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+            }
+        }
+
+        function drawWaterUmbrella(u) {
+            // Cabo
+            ctx.fillStyle = '#4682B4';
+            ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
+            
+            // Cúpula aquática
+            const gradient = ctx.createRadialGradient(
+                u.x + u.width/2, u.y + u.width/2, 0,
+                u.x + u.width/2, u.y + u.width/2, u.width/2
+            );
+            gradient.addColorStop(0, u.color);
+            gradient.addColorStop(1, '#00BFFF');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
+            ctx.fill();
+            
+            // Trilha de bolhas
+            if (u.bubbleTrail && Math.random() > 0.7) {
+                ctx.fillStyle = `rgba(173, 216, 230, ${0.3 + Math.random() * 0.7})`;
+                ctx.beginPath();
+                ctx.arc(
+                    u.x + u.width/2 + Math.random() * 20 - 10,
+                    u.y + u.height - 10 + Math.random() * 20,
+                    Math.random() * 5 + 2,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+        }
+
+        function drawCloud(x, y, size, opacity) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.4, y - size * 0.2, size * 0.4, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.8, y, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawStars() {
+            stars.forEach(star => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+                star.y += star.speed;
+                if (star.y > canvas.height) star.y = 0;
+            });
+        }
+
+        function drawNebulas() {
+            nebulas.forEach(nebula => {
+                const gradient = ctx.createRadialGradient(
+                    nebula.x, nebula.y, 0,
+                    nebula.x, nebula.y, nebula.radius
+                );
+                gradient.addColorStop(0, nebula.color);
+                gradient.addColorStop(1, 'transparent');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(nebula.x, nebula.y, nebula.radius, 0, Math.PI * 2);
+                ctx.fill();
+                
+                nebula.x += nebula.speed;
+                if (nebula.x < -nebula.radius) nebula.x = canvas.width + nebula.radius;
+            });
+        }
+
+        function drawMeteors() {
+            ctx.lineWidth = 2;
+            meteors.forEach((meteor, i) => {
+                ctx.strokeStyle = meteor.color;
+                ctx.beginPath();
+                ctx.moveTo(meteor.x, meteor.y);
+                ctx.lineTo(meteor.x - meteor.size * 5, meteor.y + meteor.size * 5);
+                ctx.stroke();
+                
+                meteor.y += meteor.speed;
+                if (meteor.y > canvas.height) meteors.splice(i, 1);
+            });
+        }
+
+        function drawLavaBubbles() {
+            lavaBubbles.forEach((bubble, i) => {
+                ctx.fillStyle = `rgba(255, ${Math.floor(69 + Math.random() * 50)}, 0, ${bubble.opacity})`;
+                ctx.beginPath();
+                ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                bubble.y -= bubble.speed;
+                if (bubble.y < -bubble.size) {
+                    bubble.y = canvas.height + Math.random() * 50;
+                    bubble.x = Math.random() * canvas.width;
+                }
+                
+                // Adiciona novas bolhas aleatoriamente
+                if (Math.random() > 0.98 && lavaBubbles.length < 30) {
+                    lavaBubbles.push({
+                        x: Math.random() * canvas.width,
+                        y: canvas.height + Math.random() * 50,
+                        size: 10 + Math.random() * 20,
+                        speed: 1 + Math.random() * 3,
+                        opacity: 0.3 + Math.random() * 0.7
+                    });
+                }
+            });
+        }
+
+        function drawBubbles() {
+            bubbles.forEach((bubble, i) => {
+                ctx.fillStyle = `rgba(173, 216, 230, ${bubble.opacity})`;
+                ctx.beginPath();
+                ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                bubble.y -= bubble.speed;
+                if (bubble.y < -bubble.size) {
+                    bubble.y = canvas.height + Math.random() * 100;
+                    bubble.x = Math.random() * canvas.width;
+                }
+                
+                // Adiciona novas bolhas aleatoriamente
+                if (Math.random() > 0.97 && bubbles.length < 50) {
+                    bubbles.push({
+                        x: Math.random() * canvas.width,
+                        y: canvas.height + Math.random() * 100,
+                        size: 5 + Math.random() * 15,
+                        speed: 1 + Math.random() * 2,
+                        opacity: 0.4 + Math.random() * 0.6
+                    });
+                }
+            });
+        }
+
+        function createRain() {
+            if (Math.random() > 0.6) {
+                rainDrops.push({
+                    x: Math.random() * canvas.width,
+                    y: -5,
+                    length: 10 + Math.random() * 20,
+                    speed: 5 + Math.random() * 5
+                });
+            }
+        }
+
+        function drawRain() {
+            ctx.strokeStyle = rainColor;
+            ctx.lineWidth = 1;
+            rainDrops.forEach((drop, i) => {
+                ctx.beginPath();
+                ctx.moveTo(drop.x, drop.y);
+                ctx.lineTo(drop.x, drop.y + drop.length);
+                ctx.stroke();
+                
+                drop.y += drop.speed;
+                if (drop.y > canvas.height) rainDrops.splice(i, 1);
+            });
+        }
+
+        function createMeteor() {
+            if (Math.random() > 0.98) {
+                meteors.push({
+                    x: Math.random() * canvas.width,
+                    y: -50,
+                    speed: 8 + Math.random() * 5,
+                    size: 3 + Math.random() * 5,
+                    color: `hsl(${Math.random() * 60 + 20}, 100%, 50%)`
+                });
+            }
+        }
+
+        // ===== EFEITO DE TRANSIÇÃO =====
+        function drawTransition() {
+            ctx.fillStyle = `rgba(0, 0, 0, ${transitionProgress})`;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            if (transitionProgress < 1) {
+                transitionProgress += 0.01;
+                
+                const starCount = Math.floor(transitionProgress * 100);
+                for (let i = 0; i < starCount; i++) {
+                    if (i < stars.length) {
+                        ctx.fillStyle = `rgba(255, 255, 255, ${transitionProgress})`;
+                        ctx.fillRect(stars[i].x, stars[i].y, stars[i].size, stars[i].size);
+                    }
+                }
+            }
+        }
+
+        // ===== GAME OVER E REINÍCIO =====
+        function showGameOver() {
+            gameActive = false;
+            
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('highscore', highscore);
+                highscoreElement.textContent = highscore;
+            }
+            
+            finalScoreElement.textContent = `Pontuação: ${score}`;
+            finalLevelElement.textContent = `Nível alcançado: ${
+                currentLevel === 'earth' ? 'Terra' : 
+                currentLevel === 'space' ? 'Espaço' : 
+                currentLevel === 'hell' ? 'Inferno' : 'Oceano'
+            }`;
+            gameOverScreen.style.display = 'flex';
+        }
+
+        function resetGame() {
+            score = 0;
+            lives = 6;
+            currentLevel = 'earth';
+            transitionActive = false;
+            transitionProgress = 0;
+            gameActive = true;
+            
+            earthUmbrellas = [];
+            spaceUmbrellas = [];
+            hellUmbrellas = [];
+            waterUmbrellas = [];
+            rainDrops = [];
+            meteors = [];
+            lavaBubbles = [];
+            bubbles = [];
+            
+            document.body.style.background = 'radial-gradient(ellipse at center, #1a2a6c 0%, #2a3a7c 100%)';
+            uiElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+            levelElement.textContent = "Nível: Terra";
+            
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            highscoreElement.textContent = highscore;
+            
+            gameOverScreen.style.display = 'none';
+            
+            initializeEarthElements();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ===== LOOP PRINCIPAL =====
+        function gameLoop(timestamp) {
+            if (!gameActive) return;
+            
+            if (timestamp - lastTime > 1000 / fps) {
+                lastTime = timestamp;
+                
+                // Limpa a tela
+                if (currentLevel === 'earth') {
+                    ctx.fillStyle = 'rgba(26, 42, 108, 0.2)';
+                } else if (currentLevel === 'space') {
+                    ctx.fillStyle = 'rgba(0, 10, 30, 0.2)';
+                } else if (currentLevel === 'hell') {
+                    ctx.fillStyle = 'rgba(139, 0, 0, 0.2)';
+                } else if (currentLevel === 'water') {
+                    ctx.fillStyle = 'rgba(0, 0, 139, 0.2)';
+                } else {
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                }
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                checkLevelTransition();
+                
+                if (currentLevel === 'earth') {
+                    // Nível Terra (Fácil)
+                    earthClouds.forEach(cloud => {
+                        cloud.x += cloud.speed;
+                        if (cloud.x > canvas.width + cloud.size) cloud.x = -cloud.size;
+                        drawCloud(cloud.x, cloud.y, cloud.size, cloud.opacity);
+                    });
+                    
+                    createRain();
+                    drawRain();
+                    
+                    earthUmbrellas.forEach((u, i) => {
+                        u.y += u.speed;
+                        drawEarthUmbrella(u);
+                        
+                        if (u.y > canvas.height) {
+                            earthUmbrellas.splice(i, 1);
+                            lives--;
+                            livesElement.textContent = lives;
+                            if (lives <= 0) showGameOver();
+                        }
+                    });
+                    
+                    if (Math.random() < 0.015) createEarthUmbrella(); // Frequência reduzida
+                    
+                } else if (currentLevel === 'space') {
+                    // Nível Espaço (Fácil)
+                    drawStars();
+                    drawNebulas();
+                    
+                    createMeteor();
+                    drawMeteors();
+                    
+                    spaceUmbrellas.forEach((u, i) => {
+                        u.y += u.speed;
+                        drawSpaceUmbrella(u);
+                        
+                        if (u.y > canvas.height) {
+                            spaceUmbrellas.splice(i, 1);
+                            lives--;
+                            livesElement.textContent = lives;
+                            if (lives <= 0) showGameOver();
+                        }
+                    });
+                    
+                    if (Math.random() < 0.015) createSpaceUmbrella(); // Frequência reduzida
+                    
+                } else if (currentLevel === 'hell') {
+                    // Nível Inferno (Difícil - 10.000 pontos)
+                    drawLavaBubbles();
+                    
+                    hellUmbrellas.forEach((u, i) => {
+                        u.y += u.speed;
+                        drawHellUmbrella(u);
+                        
+                        if (u.y > canvas.height) {
+                            hellUmbrellas.splice(i, 1);
+                            lives--;
+                            livesElement.textContent = lives;
+                            if (lives <= 0) showGameOver();
+                        }
+                    });
+                    
+                    if (Math.random() < 0.02) createHellUmbrella();
+                    
+                } else if (currentLevel === 'water') {
+                    // Nível Água (Difícil - 20.000 pontos)
+                    drawBubbles();
+                    
+                    waterUmbrellas.forEach((u, i) => {
+                        u.y += u.speed;
+                        drawWaterUmbrella(u);
+                        
+                        if (u.y > canvas.height) {
+                            waterUmbrellas.splice(i, 1);
+                            lives--;
+                            livesElement.textContent = lives;
+                            if (lives <= 0) showGameOver();
+                        }
+                    });
+                    
+                    if (Math.random() < 0.02) createWaterUmbrella();
+                    
+                } else if (currentLevel === 'transition') {
+                    drawTransition();
+                }
+                
+                scoreElement.textContent = score;
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+
+        // ===== CONTROLES =====
+        function handleClick(x, y) {
+            if (!gameActive || transitionActive) return;
+            
+            if (currentLevel === 'earth') {
+                earthUmbrellas.forEach((u, i) => {
+                    if (isClickInsideUmbrella(x, y, u)) {
+                        for (let j = 0; j < 15; j++) {
+                            ctx.fillStyle = u.color;
+                            ctx.beginPath();
+                            ctx.arc(
+                                u.x + u.width/2 + Math.random() * 30 - 15,
+                                u.y + u.height/2 + Math.random() * 30 - 15,
+                                Math.random() * 4 + 2,
+                                0, Math.PI * 2
+                            );
+                            ctx.fill();
+                        }
+                        
+                        earthUmbrellas.splice(i, 1);
+                        score += 10;
+                        scoreElement.textContent = score;
+                    }
+                });
+            } else if (currentLevel === 'space') {
+                spaceUmbrellas.forEach((u, i) => {
+                    if (isClickInsideUmbrella(x, y, u)) {
+                        for (let j = 0; j < 30; j++) {
+                            ctx.fillStyle = u.color;
+                            ctx.beginPath();
+                            ctx.arc(
+                                u.x + u.width/2 + Math.random() * 50 - 25,
+                                u.y + u.height/2 + Math.random() * 50 - 25,
+                                Math.random() * 6 + 2,
+                                0, Math.PI * 2
+                            );
+                            ctx.fill();
+                        }
+                        
+                        spaceUmbrellas.splice(i, 1);
+                        score += 100;
+                        scoreElement.textContent = score;
+                    }
+                });
+            } else if (currentLevel === 'hell') {
+                hellUmbrellas.forEach((u, i) => {
+                    if (isClickInsideUmbrella(x, y, u)) {
+                        for (let j = 0; j < 40; j++) {
+                            ctx.fillStyle = `rgba(255, ${Math.floor(100 + Math.random() * 155)}, 0, ${0.5 + Math.random() * 0.5})`;
+                            ctx.beginPath();
+                            ctx.arc(
+                                u.x + u.width/2 + Math.random() * 60 - 30,
+                                u.y + u.height/2 + Math.random() * 60 - 30,
+                                Math.random() * 8 + 2,
+                                0, Math.PI * 2
+                            );
+                            ctx.fill();
+                        }
+                        
+                        hellUmbrellas.splice(i, 1);
+                        score += 500;
+                        scoreElement.textContent = score;
+                    }
+                });
+            } else if (currentLevel === 'water') {
+                waterUmbrellas.forEach((u, i) => {
+                    if (isClickInsideUmbrella(x, y, u)) {
+                        for (let j = 0; j < 25; j++) {
+                            ctx.fillStyle = `rgba(173, 216, 230, ${0.5 + Math.random() * 0.5})`;
+                            ctx.beginPath();
+                            ctx.arc(
+                                u.x + u.width/2 + Math.random() * 40 - 20,
+                                u.y + u.height/2 + Math.random() * 40 - 20,
+                                Math.random() * 7 + 3,
+                                0, Math.PI * 2
+                            );
+                            ctx.fill();
+                        }
+                        
+                        waterUmbrellas.splice(i, 1);
+                        score += 1000;
+                        scoreElement.textContent = score;
+                    }
+                });
+            }
+        }
+
+        // Função para melhorar a detecção de toque
+        function getTouchPos(canvasDom, touchEvent) {
+            const rect = canvasDom.getBoundingClientRect();
+            return {
+                x: touchEvent.touches[0].clientX - rect.left,
+                y: touchEvent.touches[0].clientY - rect.top
+            };
+        }
+
+        // Eventos de clique/toque otimizados para mobile
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            handleClick(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touchPos = getTouchPos(canvas, e);
+            handleClick(touchPos.x, touchPos.y);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        restartBtn.addEventListener('click', resetGame);
+
+        // ===== INICIALIZAÇÃO =====
+        initializeEarthElements();
+        highscoreElement.textContent = highscore;
+        gameLoop();
+    </script>
+</body>
+</html>
