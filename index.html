@@ -28,7 +28,7 @@
         #level-indicator {
             position: absolute;
             top: 20px;
-            right: 20px;
+            right: 120px; /* Ajustado para dar espaço ao botão de pausa */
             color: white;
             font-size: 18px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
@@ -58,6 +58,43 @@
             border-radius: 5px;
             cursor: pointer;
         }
+        
+        /* BOTÃO DE PAUSA NOVO ESTILO (LADO DIREITO) */
+        #pause-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 15px;
+            background: #FF5722;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 16px;
+        }
+        
+        .level-up-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            padding: 20px;
+            border-radius: 10px;
+            font-size: 24px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.05); }
+            100% { transform: translate(-50%, -50%) scale(1); }
+        }
     </style>
 </head>
 <body>
@@ -65,6 +102,10 @@
         ☂️ <span id="score">0</span> | ❤️ <span id="lives">6</span> | 🏆 <span id="highscore">0</span>
     </div>
     <div id="level-indicator">Nível: Terra</div>
+    
+    <!-- BOTÃO DE PAUSA NO LADO DIREITO -->
+    <button id="pause-btn">⏸️ Pausar</button>
+    
     <canvas id="gameCanvas"></canvas>
 
     <div id="game-over">
@@ -72,6 +113,11 @@
         <p id="final-score">Pontuação: 0</p>
         <p id="final-level">Nível alcançado: Terra</p>
         <button id="restart-btn">Jogar Novamente</button>
+    </div>
+    
+    <div id="level-up-message" class="level-up-message">
+        <h2>PARABÉNS!</h2>
+        <p>Você alcançou o nível <span id="new-level-name">Espaço</span>!</p>
     </div>
 
     <script>
@@ -87,6 +133,8 @@
         const finalScoreElement = document.getElementById('final-score');
         const finalLevelElement = document.getElementById('final-level');
         const restartBtn = document.getElementById('restart-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const levelUpMessage = document.getElementById('level-up-message');
         
         // Variáveis de estado do jogo
         let score = 0;
@@ -98,6 +146,7 @@
         let lastTime = 0;
         const fps = 60;
         let gameActive = true;
+        let isPaused = false;
 
         // Ajuste de tela
         function resizeCanvas() {
@@ -107,20 +156,31 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
+        // ===== CONTROLE DE PAUSA CORRIGIDO =====
+        pauseBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            pauseBtn.textContent = isPaused ? "▶ Continuar" : "⏸️ Pausar";
+            
+            // Se estiver despausando, reinicia o game loop
+            if (!isPaused && gameActive) {
+                lastTime = performance.now() - (1000 / fps);
+                requestAnimationFrame(gameLoop);
+            }
+        });
+
         // ===== SISTEMA DE NÍVEIS =====
         function checkLevelTransition() {
-            if (score >= 400 && currentLevel === 'earth' && !transitionActive) {
+            if (score >= 400 && currentLevel === 'earth' && !transitionActive && !isPaused) {
                 startTransition('space');
-            } else if (score >= 10000 && currentLevel === 'space' && !transitionActive) {
+            } else if (score >= 10000 && currentLevel === 'space' && !transitionActive && !isPaused) {
                 startTransition('hell');
-            } else if (score >= 20000 && currentLevel === 'hell' && !transitionActive) {
+            } else if (score >= 20000 && currentLevel === 'hell' && !transitionActive && !isPaused) {
                 startTransition('water');
             }
         }
 
         function startTransition(newLevel) {
             transitionActive = true;
-            const oldLevel = currentLevel;
             currentLevel = 'transition';
             
             if (newLevel === 'space') {
@@ -145,6 +205,16 @@
             transitionActive = false;
             transitionProgress = 0;
             
+            const levelNames = {
+                'space': 'Espaço Intergaláctico',
+                'hell': 'Inferno',
+                'water': 'Oceano Profundo'
+            };
+            
+            if (levelNames[newLevel]) {
+                showLevelUpMessage(levelNames[newLevel]);
+            }
+            
             if (newLevel === 'space') {
                 levelElement.textContent = "Nível: Espaço Intergaláctico";
                 initializeSpaceElements();
@@ -157,7 +227,16 @@
             }
         }
 
-        // ===== ELEMENTOS DO NÍVEL TERRESTRE (Fácil) =====
+        function showLevelUpMessage(levelName) {
+            document.getElementById('new-level-name').textContent = levelName;
+            levelUpMessage.style.display = 'block';
+            
+            setTimeout(() => {
+                levelUpMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        // ===== ELEMENTOS DO JOGO =====
         let earthUmbrellas = [];
         const earthUmbrellaColors = ['#FF5252', '#4285F4', '#FBBC05', '#34A853'];
         let earthClouds = [];
@@ -168,14 +247,14 @@
             earthClouds = Array.from({ length: 5 }, () => ({
                 x: Math.random() * canvas.width,
                 y: Math.random() * canvas.height * 0.6,
-                speed: 0.2 + Math.random() * 0.3, // Mais lento
+                speed: 0.2 + Math.random() * 0.3,
                 size: 50 + Math.random() * 50,
                 opacity: 0.7 + Math.random() * 0.3
             }));
         }
 
         function createEarthUmbrella() {
-            const speed = 1.5 + Math.random() * 2 + (score / 1000); // Velocidade reduzida
+            const speed = 1.5 + Math.random() * 2 + (score / 1000);
             earthUmbrellas.push({
                 x: Math.random() * (canvas.width - 50),
                 y: -70,
@@ -186,7 +265,6 @@
             });
         }
 
-        // ===== ELEMENTOS DO NÍVEL ESPACIAL (Fácil) =====
         let spaceUmbrellas = [];
         const spaceUmbrellaColors = ['#ff00ff', '#00ffff', '#ffff00', '#ff00ff'];
         let stars = [];
@@ -212,7 +290,7 @@
         }
 
         function createSpaceUmbrella() {
-            const speed = 1.8 + Math.random() * 2.5 + (score / 1000); // Velocidade reduzida
+            const speed = 1.8 + Math.random() * 2.5 + (score / 1000);
             spaceUmbrellas.push({
                 x: Math.random() * (canvas.width - 50),
                 y: -70,
@@ -224,7 +302,6 @@
             });
         }
 
-        // ===== ELEMENTOS DO NÍVEL INFERNO (Difícil - 10.000 pontos) =====
         let hellUmbrellas = [];
         const hellUmbrellaColors = ['#FF0000', '#FF4500', '#FF8C00', '#B22222'];
         let lavaBubbles = [];
@@ -241,7 +318,7 @@
         }
 
         function createHellUmbrella() {
-            const speed = 3 + Math.random() * 4 + (score / 500); // Velocidade aumentada
+            const speed = 3 + Math.random() * 4 + (score / 500);
             hellUmbrellas.push({
                 x: Math.random() * (canvas.width - 50),
                 y: -70,
@@ -253,7 +330,6 @@
             });
         }
 
-        // ===== ELEMENTOS DO NÍVEL ÁGUA (Difícil - 20.000 pontos) =====
         let waterUmbrellas = [];
         const waterUmbrellaColors = ['#00BFFF', '#1E90FF', '#4169E1', '#4682B4'];
         let bubbles = [];
@@ -270,7 +346,7 @@
         }
 
         function createWaterUmbrella() {
-            const speed = 2.5 + Math.random() * 3.5 + (score / 500); // Velocidade moderada
+            const speed = 2.5 + Math.random() * 3.5 + (score / 500);
             waterUmbrellas.push({
                 x: Math.random() * (canvas.width - 50),
                 y: -70,
@@ -282,23 +358,10 @@
             });
         }
 
-        // ===== FUNÇÕES DE DESENHO GENÉRICAS =====
-        function isClickInsideUmbrella(x, y, u) {
-            const centerX = u.x + u.width/2;
-            const centerY = u.y + u.width/2;
-            const radius = u.width/2;
-            return (
-                y > u.y && // Evita cliques acima do guarda-chuva
-                Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2) <= radius * 1.2 // 20% mais sensível
-            );
-        }
-
         function drawEarthUmbrella(u) {
-            // Cabo
             ctx.fillStyle = '#5D4037';
             ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
             
-            // Cúpula
             ctx.fillStyle = u.color;
             ctx.beginPath();
             ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
@@ -306,15 +369,12 @@
         }
 
         function drawSpaceUmbrella(u) {
-            // Efeito de glow
             ctx.shadowBlur = u.glow;
             ctx.shadowColor = u.color;
             
-            // Cabo
             ctx.fillStyle = '#FFFFFF';
             ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
             
-            // Cúpula
             ctx.fillStyle = u.color;
             ctx.beginPath();
             ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
@@ -325,11 +385,9 @@
         }
 
         function drawHellUmbrella(u) {
-            // Cabo em chamas
             ctx.fillStyle = '#FF4500';
             ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
             
-            // Cúpula flamejante
             const gradient = ctx.createRadialGradient(
                 u.x + u.width/2, u.y + u.width/2, 0,
                 u.x + u.width/2, u.y + u.width/2, u.width/2
@@ -342,7 +400,6 @@
             ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
             ctx.fill();
             
-            // Efeito de fogo
             if (u.onFire) {
                 for (let i = 0; i < 3; i++) {
                     ctx.fillStyle = `rgba(255, ${Math.floor(100 + Math.random() * 155)}, 0, ${Math.random() * 0.5})`;
@@ -359,11 +416,9 @@
         }
 
         function drawWaterUmbrella(u) {
-            // Cabo
             ctx.fillStyle = '#4682B4';
             ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
             
-            // Cúpula aquática
             const gradient = ctx.createRadialGradient(
                 u.x + u.width/2, u.y + u.width/2, 0,
                 u.x + u.width/2, u.y + u.width/2, u.width/2
@@ -376,7 +431,6 @@
             ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
             ctx.fill();
             
-            // Trilha de bolhas
             if (u.bubbleTrail && Math.random() > 0.7) {
                 ctx.fillStyle = `rgba(173, 216, 230, ${0.3 + Math.random() * 0.7})`;
                 ctx.beginPath();
@@ -454,7 +508,6 @@
                     bubble.x = Math.random() * canvas.width;
                 }
                 
-                // Adiciona novas bolhas aleatoriamente
                 if (Math.random() > 0.98 && lavaBubbles.length < 30) {
                     lavaBubbles.push({
                         x: Math.random() * canvas.width,
@@ -480,7 +533,6 @@
                     bubble.x = Math.random() * canvas.width;
                 }
                 
-                // Adiciona novas bolhas aleatoriamente
                 if (Math.random() > 0.97 && bubbles.length < 50) {
                     bubbles.push({
                         x: Math.random() * canvas.width,
@@ -494,7 +546,7 @@
         }
 
         function createRain() {
-            if (Math.random() > 0.6) {
+            if (Math.random() > 0.6 && !isPaused) {
                 rainDrops.push({
                     x: Math.random() * canvas.width,
                     y: -5,
@@ -513,13 +565,16 @@
                 ctx.lineTo(drop.x, drop.y + drop.length);
                 ctx.stroke();
                 
-                drop.y += drop.speed;
+                if (!isPaused) {
+                    drop.y += drop.speed;
+                }
+                
                 if (drop.y > canvas.height) rainDrops.splice(i, 1);
             });
         }
 
         function createMeteor() {
-            if (Math.random() > 0.98) {
+            if (Math.random() > 0.98 && !isPaused) {
                 meteors.push({
                     x: Math.random() * canvas.width,
                     y: -50,
@@ -530,12 +585,11 @@
             }
         }
 
-        // ===== EFEITO DE TRANSIÇÃO =====
         function drawTransition() {
             ctx.fillStyle = `rgba(0, 0, 0, ${transitionProgress})`;
             ctx.fillRect(0, 0, canvas.width, canvas.height);
             
-            if (transitionProgress < 1) {
+            if (transitionProgress < 1 && !isPaused) {
                 transitionProgress += 0.01;
                 
                 const starCount = Math.floor(transitionProgress * 100);
@@ -548,9 +602,10 @@
             }
         }
 
-        // ===== GAME OVER E REINÍCIO =====
         function showGameOver() {
             gameActive = false;
+            isPaused = true;
+            pauseBtn.textContent = "⏸️ Pausar";
             
             if (score > highscore) {
                 highscore = score;
@@ -574,6 +629,8 @@
             transitionActive = false;
             transitionProgress = 0;
             gameActive = true;
+            isPaused = false;
+            pauseBtn.textContent = "⏸️ Pausar";
             
             earthUmbrellas = [];
             spaceUmbrellas = [];
@@ -593,19 +650,24 @@
             highscoreElement.textContent = highscore;
             
             gameOverScreen.style.display = 'none';
+            levelUpMessage.style.display = 'none';
             
             initializeEarthElements();
+            lastTime = performance.now();
             requestAnimationFrame(gameLoop);
         }
 
-        // ===== LOOP PRINCIPAL =====
         function gameLoop(timestamp) {
-            if (!gameActive) return;
+            if (!gameActive || isPaused) {
+                if (!gameActive) return;
+                // Se estiver pausado, não atualiza mas mantém o loop rodando
+                requestAnimationFrame(gameLoop);
+                return;
+            }
             
             if (timestamp - lastTime > 1000 / fps) {
                 lastTime = timestamp;
                 
-                // Limpa a tela
                 if (currentLevel === 'earth') {
                     ctx.fillStyle = 'rgba(26, 42, 108, 0.2)';
                 } else if (currentLevel === 'space') {
@@ -622,7 +684,6 @@
                 checkLevelTransition();
                 
                 if (currentLevel === 'earth') {
-                    // Nível Terra (Fácil)
                     earthClouds.forEach(cloud => {
                         cloud.x += cloud.speed;
                         if (cloud.x > canvas.width + cloud.size) cloud.x = -cloud.size;
@@ -644,10 +705,9 @@
                         }
                     });
                     
-                    if (Math.random() < 0.015) createEarthUmbrella(); // Frequência reduzida
+                    if (Math.random() < 0.015) createEarthUmbrella();
                     
                 } else if (currentLevel === 'space') {
-                    // Nível Espaço (Fácil)
                     drawStars();
                     drawNebulas();
                     
@@ -666,10 +726,9 @@
                         }
                     });
                     
-                    if (Math.random() < 0.015) createSpaceUmbrella(); // Frequência reduzida
+                    if (Math.random() < 0.015) createSpaceUmbrella();
                     
                 } else if (currentLevel === 'hell') {
-                    // Nível Inferno (Difícil - 10.000 pontos)
                     drawLavaBubbles();
                     
                     hellUmbrellas.forEach((u, i) => {
@@ -687,7 +746,6 @@
                     if (Math.random() < 0.02) createHellUmbrella();
                     
                 } else if (currentLevel === 'water') {
-                    // Nível Água (Difícil - 20.000 pontos)
                     drawBubbles();
                     
                     waterUmbrellas.forEach((u, i) => {
@@ -714,9 +772,18 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // ===== CONTROLES =====
+        function isClickInsideUmbrella(x, y, u) {
+            const centerX = u.x + u.width/2;
+            const centerY = u.y + u.width/2;
+            const radius = u.width/2;
+            return (
+                y > u.y &&
+                Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2) <= radius * 1.2
+            );
+        }
+
         function handleClick(x, y) {
-            if (!gameActive || transitionActive) return;
+            if (!gameActive || transitionActive || isPaused) return;
             
             if (currentLevel === 'earth') {
                 earthUmbrellas.forEach((u, i) => {
@@ -801,7 +868,6 @@
             }
         }
 
-        // Função para melhorar a detecção de toque
         function getTouchPos(canvasDom, touchEvent) {
             const rect = canvasDom.getBoundingClientRect();
             return {
@@ -810,7 +876,6 @@
             };
         }
 
-        // Eventos de clique/toque otimizados para mobile
         canvas.addEventListener('click', (e) => {
             const rect = canvas.getBoundingClientRect();
             handleClick(e.clientX - rect.left, e.clientY - rect.top);
@@ -828,10 +893,10 @@
 
         restartBtn.addEventListener('click', resetGame);
 
-        // ===== INICIALIZAÇÃO =====
         initializeEarthElements();
         highscoreElement.textContent = highscore;
-        gameLoop();
+        lastTime = performance.now();
+        requestAnimationFrame(gameLoop);
     </script>
 </body>
 </html>
