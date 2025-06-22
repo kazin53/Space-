@@ -28,7 +28,7 @@
         #level-indicator {
             position: absolute;
             top: 20px;
-            right: 120px; /* Ajustado para dar espaço ao botão de pausa */
+            right: 120px;
             color: white;
             font-size: 18px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
@@ -58,8 +58,6 @@
             border-radius: 5px;
             cursor: pointer;
         }
-        
-        /* BOTÃO DE PAUSA NOVO ESTILO (LADO DIREITO) */
         #pause-btn {
             position: absolute;
             top: 20px;
@@ -73,7 +71,6 @@
             z-index: 100;
             font-size: 16px;
         }
-        
         .level-up-message {
             position: absolute;
             top: 50%;
@@ -89,7 +86,19 @@
             z-index: 200;
             animation: pulse 1.5s infinite;
         }
-        
+        #next-level-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
         @keyframes pulse {
             0% { transform: translate(-50%, -50%) scale(1); }
             50% { transform: translate(-50%, -50%) scale(1.05); }
@@ -98,14 +107,23 @@
     </style>
 </head>
 <body>
+    <!-- Elementos de áudio -->
+    <audio id="bgMusic" loop>
+        <source src="son musik.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="popSound">
+        <source src="pop.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="gameOverSound">
+        <source src="musik gamer ouver.mp3" type="audio/mpeg">
+    </audio>
+
     <div id="ui">
-        ☂️ <span id="score">0</span> | ❤️ <span id="lives">6</span> | 🏆 <span id="highscore">0</span>
+        ☂️ <span id="score">0</span> | ❤️ <span id="lives">6</span> | � <span id="highscore">0</span>
     </div>
     <div id="level-indicator">Nível: Terra</div>
-    
-    <!-- BOTÃO DE PAUSA NO LADO DIREITO -->
+    <div id="next-level-indicator">Próximo nível: Espaço (1000 pontos)</div>
     <button id="pause-btn">⏸️ Pausar</button>
-    
     <canvas id="gameCanvas"></canvas>
 
     <div id="game-over">
@@ -121,12 +139,12 @@
     </div>
 
     <script>
-        // ===== CONFIGURAÇÕES GERAIS =====
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const scoreElement = document.getElementById('score');
         const livesElement = document.getElementById('lives');
         const levelElement = document.getElementById('level-indicator');
+        const nextLevelElement = document.getElementById('next-level-indicator');
         const uiElement = document.getElementById('ui');
         const highscoreElement = document.getElementById('highscore');
         const gameOverScreen = document.getElementById('game-over');
@@ -136,7 +154,11 @@
         const pauseBtn = document.getElementById('pause-btn');
         const levelUpMessage = document.getElementById('level-up-message');
         
-        // Variáveis de estado do jogo
+        // Elementos de áudio
+        const bgMusic = document.getElementById('bgMusic');
+        const popSound = document.getElementById('popSound');
+        const gameOverSound = document.getElementById('gameOverSound');
+        
         let score = 0;
         let lives = 6;
         let currentLevel = 'earth';
@@ -148,7 +170,6 @@
         let gameActive = true;
         let isPaused = false;
 
-        // Ajuste de tela
         function resizeCanvas() {
             canvas.width = window.innerWidth;
             canvas.height = window.innerHeight;
@@ -156,26 +177,50 @@
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
 
-        // ===== CONTROLE DE PAUSA CORRIGIDO =====
         pauseBtn.addEventListener('click', () => {
             isPaused = !isPaused;
             pauseBtn.textContent = isPaused ? "▶ Continuar" : "⏸️ Pausar";
-            
-            // Se estiver despausando, reinicia o game loop
             if (!isPaused && gameActive) {
                 lastTime = performance.now() - (1000 / fps);
                 requestAnimationFrame(gameLoop);
+                bgMusic.play();
+            } else {
+                bgMusic.pause();
             }
         });
 
-        // ===== SISTEMA DE NÍVEIS =====
         function checkLevelTransition() {
-            if (score >= 400 && currentLevel === 'earth' && !transitionActive && !isPaused) {
+            if (score >= 1000 && currentLevel === 'earth' && !transitionActive && !isPaused) {
                 startTransition('space');
-            } else if (score >= 10000 && currentLevel === 'space' && !transitionActive && !isPaused) {
+            } else if (score >= 3000 && currentLevel === 'space' && !transitionActive && !isPaused) {
                 startTransition('hell');
-            } else if (score >= 20000 && currentLevel === 'hell' && !transitionActive && !isPaused) {
+            } else if (score >= 10000 && currentLevel === 'hell' && !transitionActive && !isPaused) {
                 startTransition('water');
+            } else if (score >= 20000 && currentLevel === 'water' && !transitionActive && !isPaused) {
+                startTransition('desert');
+            }
+        }
+
+        function updateNextLevelIndicator() {
+            if (!gameActive || transitionActive) {
+                nextLevelElement.style.display = 'none';
+                return;
+            }
+            
+            if (currentLevel === 'earth') {
+                nextLevelElement.textContent = "Próximo nível: Espaço (1000 pontos)";
+                nextLevelElement.style.display = 'block';
+            } else if (currentLevel === 'space') {
+                nextLevelElement.textContent = "Próximo nível: Inferno (3000 pontos)";
+                nextLevelElement.style.display = 'block';
+            } else if (currentLevel === 'hell') {
+                nextLevelElement.textContent = "Próximo nível: Oceano (10000 pontos)";
+                nextLevelElement.style.display = 'block';
+            } else if (currentLevel === 'water') {
+                nextLevelElement.textContent = "Próximo nível: Deserto (20000 pontos)";
+                nextLevelElement.style.display = 'block';
+            } else {
+                nextLevelElement.style.display = 'none';
             }
         }
 
@@ -195,6 +240,10 @@
                 levelElement.textContent = "Nível: Transição para o Oceano!";
                 document.body.style.background = 'radial-gradient(ellipse at center, #00008B 0%, #1E90FF 100%)';
                 uiElement.style.textShadow = '0 0 10px #00bfff, 0 0 20px #1e90ff';
+            } else if (newLevel === 'desert') {
+                levelElement.textContent = "Nível: Transição para o Deserto!";
+                document.body.style.background = 'radial-gradient(ellipse at center, #D2691E 0%, #F4A460 100%)';
+                uiElement.style.textShadow = '0 0 10px #ff8c00, 0 0 20px #ffd700';
             }
             
             setTimeout(() => completeTransition(newLevel), 1500);
@@ -208,7 +257,8 @@
             const levelNames = {
                 'space': 'Espaço Intergaláctico',
                 'hell': 'Inferno',
-                'water': 'Oceano Profundo'
+                'water': 'Oceano Profundo',
+                'desert': 'Deserto Ardente'
             };
             
             if (levelNames[newLevel]) {
@@ -224,19 +274,22 @@
             } else if (newLevel === 'water') {
                 levelElement.textContent = "Nível: Oceano Profundo";
                 initializeWaterElements();
+            } else if (newLevel === 'desert') {
+                levelElement.textContent = "Nível: Deserto Ardente";
+                initializeDesertElements();
             }
+            
+            updateNextLevelIndicator();
         }
 
         function showLevelUpMessage(levelName) {
             document.getElementById('new-level-name').textContent = levelName;
             levelUpMessage.style.display = 'block';
-            
             setTimeout(() => {
                 levelUpMessage.style.display = 'none';
             }, 3000);
         }
 
-        // ===== ELEMENTOS DO JOGO =====
         let earthUmbrellas = [];
         const earthUmbrellaColors = ['#FF5252', '#4285F4', '#FBBC05', '#34A853'];
         let earthClouds = [];
@@ -254,14 +307,14 @@
         }
 
         function createEarthUmbrella() {
-            const speed = 1.5 + Math.random() * 2 + (score / 1000);
+            const speed = 1.5 + Math.random() * 2 + (score / 2000);
             earthUmbrellas.push({
-                x: Math.random() * (canvas.width - 50),
+                x: Math.random() * (canvas.width - 70),
                 y: -70,
                 speed: speed,
                 color: earthUmbrellaColors[Math.floor(Math.random() * earthUmbrellaColors.length)],
-                width: 50,
-                height: 80
+                width: 70,
+                height: 100
             });
         }
 
@@ -290,20 +343,20 @@
         }
 
         function createSpaceUmbrella() {
-            const speed = 1.8 + Math.random() * 2.5 + (score / 1000);
+            const speed = 1.8 + Math.random() * 2 + (score / 2500);
             spaceUmbrellas.push({
-                x: Math.random() * (canvas.width - 50),
+                x: Math.random() * (canvas.width - 80),
                 y: -70,
                 speed: speed,
                 color: spaceUmbrellaColors[Math.floor(Math.random() * spaceUmbrellaColors.length)],
-                width: 50,
-                height: 80,
+                width: 80,
+                height: 110,
                 glow: 0
             });
         }
 
         let hellUmbrellas = [];
-        const hellUmbrellaColors = ['#FF0000', '#FF4500', '#FF8C00', '#B22222'];
+        const hellUmbrellaColors = ['#FF0000', '#FF4500', '#FF8C00', '#FFD700', '#FF6347', '#FFA07A'];
         let lavaBubbles = [];
         let fireParticles = [];
 
@@ -318,14 +371,14 @@
         }
 
         function createHellUmbrella() {
-            const speed = 3 + Math.random() * 4 + (score / 500);
+            const speed = 2.5 + Math.random() * 2.5 + (score / 3000);
             hellUmbrellas.push({
-                x: Math.random() * (canvas.width - 50),
+                x: Math.random() * (canvas.width - 100),
                 y: -70,
                 speed: speed,
                 color: hellUmbrellaColors[Math.floor(Math.random() * hellUmbrellaColors.length)],
-                width: 50,
-                height: 80,
+                width: 100,
+                height: 140,
                 onFire: true
             });
         }
@@ -346,15 +399,43 @@
         }
 
         function createWaterUmbrella() {
-            const speed = 2.5 + Math.random() * 3.5 + (score / 500);
+            const speed = 2 + Math.random() * 2.5 + (score / 3500);
             waterUmbrellas.push({
-                x: Math.random() * (canvas.width - 50),
+                x: Math.random() * (canvas.width - 90),
                 y: -70,
                 speed: speed,
                 color: waterUmbrellaColors[Math.floor(Math.random() * waterUmbrellaColors.length)],
-                width: 50,
-                height: 80,
+                width: 90,
+                height: 130,
                 bubbleTrail: true
+            });
+        }
+
+        let desertUmbrellas = [];
+        const desertUmbrellaColors = ['#D2691E', '#F4A460', '#CD853F', '#A0522D'];
+        let sandParticles = [];
+        let mirages = [];
+
+        function initializeDesertElements() {
+            sandParticles = Array.from({ length: 100 }, () => ({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: 1 + Math.random() * 3,
+                speed: 0.5 + Math.random() * 1,
+                opacity: 0.3 + Math.random() * 0.7
+            }));
+        }
+
+        function createDesertUmbrella() {
+            const speed = 2.2 + Math.random() * 2.5 + (score / 4000);
+            desertUmbrellas.push({
+                x: Math.random() * (canvas.width - 95),
+                y: -70,
+                speed: speed,
+                color: desertUmbrellaColors[Math.floor(Math.random() * desertUmbrellaColors.length)],
+                width: 95,
+                height: 135,
+                sandEffect: true
             });
         }
 
@@ -393,7 +474,8 @@
                 u.x + u.width/2, u.y + u.width/2, u.width/2
             );
             gradient.addColorStop(0, u.color);
-            gradient.addColorStop(1, '#FF8C00');
+            gradient.addColorStop(0.7, '#FF8C00');
+            gradient.addColorStop(1, '#FFD700');
             
             ctx.fillStyle = gradient;
             ctx.beginPath();
@@ -438,6 +520,35 @@
                     u.x + u.width/2 + Math.random() * 20 - 10,
                     u.y + u.height - 10 + Math.random() * 20,
                     Math.random() * 5 + 2,
+                    0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+        }
+
+        function drawDesertUmbrella(u) {
+            ctx.fillStyle = '#8B4513';
+            ctx.fillRect(u.x + u.width/2 - 2, u.y + 10, 4, u.height - 10);
+            
+            const gradient = ctx.createRadialGradient(
+                u.x + u.width/2, u.y + u.width/2, 0,
+                u.x + u.width/2, u.y + u.width/2, u.width/2
+            );
+            gradient.addColorStop(0, u.color);
+            gradient.addColorStop(1, '#F4A460');
+            
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(u.x + u.width/2, u.y + u.width/2, u.width/2, 0, Math.PI, true);
+            ctx.fill();
+            
+            if (u.sandEffect && Math.random() > 0.6) {
+                ctx.fillStyle = `rgba(244, 164, 96, ${0.4 + Math.random() * 0.6})`;
+                ctx.beginPath();
+                ctx.arc(
+                    u.x + u.width/2 + Math.random() * 30 - 15,
+                    u.y + u.height - 5 + Math.random() * 15,
+                    Math.random() * 6 + 3,
                     0, Math.PI * 2
                 );
                 ctx.fill();
@@ -545,6 +656,31 @@
             });
         }
 
+        function drawSandParticles() {
+            sandParticles.forEach((particle, i) => {
+                ctx.fillStyle = `rgba(244, 164, 96, ${particle.opacity})`;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+                
+                particle.x += particle.speed;
+                if (particle.x > canvas.width) {
+                    particle.x = -particle.size;
+                    particle.y = Math.random() * canvas.height;
+                }
+                
+                if (Math.random() > 0.99 && sandParticles.length < 150) {
+                    sandParticles.push({
+                        x: -10,
+                        y: Math.random() * canvas.height,
+                        size: 1 + Math.random() * 3,
+                        speed: 0.5 + Math.random() * 1,
+                        opacity: 0.3 + Math.random() * 0.7
+                    });
+                }
+            });
+        }
+
         function createRain() {
             if (Math.random() > 0.6 && !isPaused) {
                 rainDrops.push({
@@ -617,9 +753,15 @@
             finalLevelElement.textContent = `Nível alcançado: ${
                 currentLevel === 'earth' ? 'Terra' : 
                 currentLevel === 'space' ? 'Espaço' : 
-                currentLevel === 'hell' ? 'Inferno' : 'Oceano'
+                currentLevel === 'hell' ? 'Inferno' : 
+                currentLevel === 'water' ? 'Oceano' : 'Deserto'
             }`;
             gameOverScreen.style.display = 'flex';
+            
+            // Tocar música de game over e parar música de fundo
+            bgMusic.pause();
+            bgMusic.currentTime = 0;
+            gameOverSound.play();
         }
 
         function resetGame() {
@@ -636,10 +778,12 @@
             spaceUmbrellas = [];
             hellUmbrellas = [];
             waterUmbrellas = [];
+            desertUmbrellas = [];
             rainDrops = [];
             meteors = [];
             lavaBubbles = [];
             bubbles = [];
+            sandParticles = [];
             
             document.body.style.background = 'radial-gradient(ellipse at center, #1a2a6c 0%, #2a3a7c 100%)';
             uiElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
@@ -652,7 +796,14 @@
             gameOverScreen.style.display = 'none';
             levelUpMessage.style.display = 'none';
             
+            // Parar música de game over e iniciar música de fundo
+            gameOverSound.pause();
+            gameOverSound.currentTime = 0;
+            bgMusic.currentTime = 0;
+            bgMusic.play();
+            
             initializeEarthElements();
+            updateNextLevelIndicator();
             lastTime = performance.now();
             requestAnimationFrame(gameLoop);
         }
@@ -660,7 +811,6 @@
         function gameLoop(timestamp) {
             if (!gameActive || isPaused) {
                 if (!gameActive) return;
-                // Se estiver pausado, não atualiza mas mantém o loop rodando
                 requestAnimationFrame(gameLoop);
                 return;
             }
@@ -676,12 +826,15 @@
                     ctx.fillStyle = 'rgba(139, 0, 0, 0.2)';
                 } else if (currentLevel === 'water') {
                     ctx.fillStyle = 'rgba(0, 0, 139, 0.2)';
+                } else if (currentLevel === 'desert') {
+                    ctx.fillStyle = 'rgba(210, 105, 30, 0.2)';
                 } else {
                     ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
                 }
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 checkLevelTransition();
+                updateNextLevelIndicator();
                 
                 if (currentLevel === 'earth') {
                     earthClouds.forEach(cloud => {
@@ -762,6 +915,23 @@
                     
                     if (Math.random() < 0.02) createWaterUmbrella();
                     
+                } else if (currentLevel === 'desert') {
+                    drawSandParticles();
+                    
+                    desertUmbrellas.forEach((u, i) => {
+                        u.y += u.speed;
+                        drawDesertUmbrella(u);
+                        
+                        if (u.y > canvas.height) {
+                            desertUmbrellas.splice(i, 1);
+                            lives--;
+                            livesElement.textContent = lives;
+                            if (lives <= 0) showGameOver();
+                        }
+                    });
+                    
+                    if (Math.random() < 0.02) createDesertUmbrella();
+                    
                 } else if (currentLevel === 'transition') {
                     drawTransition();
                 }
@@ -803,6 +973,8 @@
                         earthUmbrellas.splice(i, 1);
                         score += 10;
                         scoreElement.textContent = score;
+                        popSound.currentTime = 0;
+                        popSound.play();
                     }
                 });
             } else if (currentLevel === 'space') {
@@ -821,8 +993,10 @@
                         }
                         
                         spaceUmbrellas.splice(i, 1);
-                        score += 100;
+                        score += 20;
                         scoreElement.textContent = score;
+                        popSound.currentTime = 0;
+                        popSound.play();
                     }
                 });
             } else if (currentLevel === 'hell') {
@@ -841,8 +1015,10 @@
                         }
                         
                         hellUmbrellas.splice(i, 1);
-                        score += 500;
+                        score += 50;
                         scoreElement.textContent = score;
+                        popSound.currentTime = 0;
+                        popSound.play();
                     }
                 });
             } else if (currentLevel === 'water') {
@@ -861,8 +1037,32 @@
                         }
                         
                         waterUmbrellas.splice(i, 1);
-                        score += 1000;
+                        score += 100;
                         scoreElement.textContent = score;
+                        popSound.currentTime = 0;
+                        popSound.play();
+                    }
+                });
+            } else if (currentLevel === 'desert') {
+                desertUmbrellas.forEach((u, i) => {
+                    if (isClickInsideUmbrella(x, y, u)) {
+                        for (let j = 0; j < 35; j++) {
+                            ctx.fillStyle = `rgba(244, 164, 96, ${0.5 + Math.random() * 0.5})`;
+                            ctx.beginPath();
+                            ctx.arc(
+                                u.x + u.width/2 + Math.random() * 45 - 22.5,
+                                u.y + u.height/2 + Math.random() * 45 - 22.5,
+                                Math.random() * 7 + 3,
+                                0, Math.PI * 2
+                            );
+                            ctx.fill();
+                        }
+                        
+                        desertUmbrellas.splice(i, 1);
+                        score += 150;
+                        scoreElement.textContent = score;
+                        popSound.currentTime = 0;
+                        popSound.play();
                     }
                 });
             }
@@ -893,8 +1093,15 @@
 
         restartBtn.addEventListener('click', resetGame);
 
+        // Iniciar música de fundo quando o jogo começar
+        document.addEventListener('click', function startGameMusic() {
+            bgMusic.play();
+            document.removeEventListener('click', startGameMusic);
+        }, { once: true });
+
         initializeEarthElements();
         highscoreElement.textContent = highscore;
+        updateNextLevelIndicator();
         lastTime = performance.now();
         requestAnimationFrame(gameLoop);
     </script>
