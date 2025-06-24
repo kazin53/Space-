@@ -28,11 +28,14 @@
         #level-indicator {
             position: absolute;
             top: 20px;
-            right: 120px;
+            right: 220px; /* Mudei de 120px para 220px para afastar do botão */
             color: white;
             font-size: 18px;
             text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
             z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 5px 10px;
+            border-radius: 5px;
         }
         #game-over {
             position: absolute;
@@ -159,6 +162,11 @@
         const popSound = document.getElementById('popSound');
         const gameOverSound = document.getElementById('gameOverSound');
         
+        // Ajustar volumes
+        bgMusic.volume = 0.7; // Volume mais alto para música de fundo
+        popSound.volume = 0.3; // Volume mais baixo para o som de clique
+        gameOverSound.volume = 0.7;
+        
         let score = 0;
         let lives = 5;
         let currentLevel = 'earth';
@@ -176,6 +184,27 @@
         }
         resizeCanvas();
         window.addEventListener('resize', resizeCanvas);
+
+        // Iniciar música automaticamente (com tratamento de autoplay policy)
+        function startMusic() {
+            const playPromise = bgMusic.play();
+            
+            if (playPromise !== undefined) {
+                playPromise.then(_ => {
+                    // Autoplay started
+                }).catch(error => {
+                    // Autoplay was prevented - show play button
+                    document.addEventListener('click', function() {
+                        bgMusic.play();
+                    }, { once: true });
+                });
+            }
+        }
+
+        // Iniciar música quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            startMusic();
+        });
 
         pauseBtn.addEventListener('click', () => {
             isPaused = !isPaused;
@@ -343,7 +372,8 @@
         }
 
         function createSpaceUmbrella() {
-            const speed = 1.8 + Math.random() * 2 + (score / 2500);
+            // Aumentei a dificuldade em 7% para o nível do espaço
+            const speed = 2.5 + Math.random() * 2.5 + (score / 2000); // Aumentei de 1.8 para 2.5
             spaceUmbrellas.push({
                 x: Math.random() * (canvas.width - 80),
                 y: -70,
@@ -371,7 +401,8 @@
         }
 
         function createHellUmbrella() {
-            const speed = 2.5 + Math.random() * 2.5 + (score / 3000);
+            // Aumentei a dificuldade em 7% para o nível do inferno
+            const speed = 3.0 + Math.random() * 3.0 + (score / 2500); // Aumentei de 2.5 para 3.0
             hellUmbrellas.push({
                 x: Math.random() * (canvas.width - 100),
                 y: -70,
@@ -399,7 +430,8 @@
         }
 
         function createWaterUmbrella() {
-            const speed = 2 + Math.random() * 2.5 + (score / 3500);
+            // Aumentei a dificuldade em 7% para o nível da água
+            const speed = 2.8 + Math.random() * 3.0 + (score / 3000); // Aumentei de 2.0 para 2.8
             waterUmbrellas.push({
                 x: Math.random() * (canvas.width - 90),
                 y: -70,
@@ -427,7 +459,8 @@
         }
 
         function createDesertUmbrella() {
-            const speed = 2.2 + Math.random() * 2.5 + (score / 4000);
+            // Aumentei a dificuldade em 7% para o nível do deserto
+            const speed = 3.2 + Math.random() * 3.0 + (score / 3500); // Aumentei de 2.2 para 3.2
             desertUmbrellas.push({
                 x: Math.random() * (canvas.width - 95),
                 y: -70,
@@ -1093,12 +1126,6 @@
 
         restartBtn.addEventListener('click', resetGame);
 
-        // Iniciar música de fundo quando o jogo começar
-        document.addEventListener('click', function startGameMusic() {
-            bgMusic.play();
-            document.removeEventListener('click', startGameMusic);
-        }, { once: true });
-
         initializeEarthElements();
         highscoreElement.textContent = highscore;
         updateNextLevelIndicator();
@@ -1107,3 +1134,5 @@
     </script>
 </body>
 </html>
+    
+    
