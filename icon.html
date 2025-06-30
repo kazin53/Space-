@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Balloon</title>
+    <style>
+        /* Estilo para a tela do ícone */
+        .icon-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+        }
+        
+        .icon-img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .icon-img:hover {
+            transform: scale(1.1);
+        }
+        
+        .icon-name {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        
+        .icon-details {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        /* Estilo para a tela do jogo (original) */
+        .game-screen {
+            display: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e, #0f3460);
+            height: 100vh;
+            color: white;
+        }
+
+        .title {
+            font-size: 5rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #0088ff;
+            animation: glow 2s infinite alternate;
+            z-index: 10;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #00ffff, 0 0 20px #0088ff;
+            }
+            to {
+                text-shadow: 0 0 15px #00ffff, 0 0 30px #0088ff, 0 0 40px #0044ff;
+            }
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #ff00cc, #3333ff);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .start-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .start-btn:hover::before {
+            left: 100%;
+        }
+
+        .balloon {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 40%, var(--color), var(--dark-color));
+            animation: float calc(var(--speed) * 1s) linear infinite;
+            z-index: 1;
+            filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.3));
+        }
+
+        .balloon::before {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 15px;
+            background: var(--dark-color);
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
+        }
+
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 30px;
+            background: #888;
+        }
+
+        @keyframes float {
+            0% {
+                top: -100px;
+                transform: translateX(var(--start-x)) rotate(0deg);
+            }
+            100% {
+                top: 100vh;
+                transform: translateX(calc(var(--start-x) + var(--drift))) rotate(360deg);
+            }
+        }
+
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela do ícone -->
+    <div class="icon-screen" id="iconScreen">
+        <img src="icone.png" alt="Space Balloon Icon" class="icon-img" id="appIcon">
+        <div class="icon-name">Space Balloon</div>
+        <div class="icon-details">288.08KB</div>
+    </div>
+    
+    <!-- Tela do jogo -->
+    <div class="game-screen" id="gameScreen">
+        <div class="stars" id="stars"></div>
+        <h1 class="title">SPACE BALLOON</h1>
+        <button class="start-btn" id="startBtn">IR PARA O JOGO</button>
+        
+        <audio id="bgMusic" loop>
+            <source src="musik.mp3" type="audio/mpeg">
+            Seu navegador não suporta o elemento de áudio.
+        </audio>
+    </div>
+
+    <script>
+        // Quando clicar no ícone
+        document.getElementById('appIcon').addEventListener('click', function() {
+            // Esconde a tela do ícone
+            document.getElementById('iconScreen').style.display = 'none';
+            
+            // Mostra a tela do jogo
+            document.getElementById('gameScreen').style.display = 'flex';
+            document.getElementById('gameScreen').style.flexDirection = 'column';
+            document.getElementById('gameScreen').style.justifyContent = 'center';
+            document.getElementById('gameScreen').style.alignItems = 'center';
+            
+            // Toca a música
+            const bgMusic = document.getElementById('bgMusic');
+            bgMusic.play().catch(e => {
+                console.log("Reprodução automática prevenida - música será tocada após interação");
+                // Configura para tocar quando o usuário clicar em qualquer lugar
+                document.addEventListener('click', function() {
+                    bgMusic.play();
+                }, { once: true });
+            });
+            
+            // Inicia os elementos do jogo
+            initGame();
+        });
+        
+        function initGame() {
+            // Criar estrelas de fundo
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.width = `${Math.random() * 3}px`;
+                star.style.height = star.style.width;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--duration', `${5 + Math.random() * 10}s`);
+                starsContainer.appendChild(star);
+            }
+
+            // Criar balões
+            const colors = [
+                { color: '#ff5252', dark: '#c50e29' },
+                { color: '#4285F4', dark: '#0d47a1' },
+                { color: '#FBBC05', dark: '#ff8f00' },
+                { color: '#34A853', dark: '#1b5e20' },
+                { color: '#9C27B0', dark: '#6a1b9a' }
+            ];
+
+            function createBalloon() {
+                const balloon = document.createElement('div');
+                balloon.classList.add('balloon');
+                
+                const colorIndex = Math.floor(Math.random() * colors.length);
+                const color = colors[colorIndex];
+                
+                balloon.style.setProperty('--color', color.color);
+                balloon.style.setProperty('--dark-color', color.dark);
+                balloon.style.setProperty('--start-x', `${Math.random() * 100}%`);
+                balloon.style.setProperty('--drift', `${(Math.random() - 0.5) * 20}%`);
+                balloon.style.setProperty('--speed', `${10 + Math.random() * 20}`);
+                
+                document.body.appendChild(balloon);
+                
+                // Remover balão quando sair da tela
+                setTimeout(() => {
+                    balloon.remove();
+                }, parseFloat(balloon.style.getPropertyValue('--speed')) * 1000);
+            }
+
+            // Criar balões periodicamente
+            setInterval(createBalloon, 800);
+            
+            // Iniciar com alguns balões
+            for (let i = 0; i < 10; i++) {
+                setTimeout(createBalloon, i * 300);
+            }
+
+            // Botão para iniciar o jogo
+            document.getElementById('startBtn').addEventListener('click', () => {
+                // Pausar a música antes de ir para o jogo
+                document.getElementById('bgMusic').pause();
+                window.location.href = "jogo.html"; // Substitua pelo nome do seu arquivo de jogo
+            });
+        }
+    </script>
+</body>
+</html>
