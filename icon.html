@@ -275,11 +275,11 @@
                 setTimeout(createBalloon, i * 300);
             }
 
-            // Botão para iniciar o jogo
+            // Botão para iniciar o jogo - agora redireciona para index.html
             document.getElementById('startBtn').addEventListener('click', () => {
-                // Pausar a música antes de ir para o jogo
+                // Pausar a música antes de ir para o index
                 document.getElementById('bgMusic').pause();
-                window.location.href = "jogo.html"; // Substitua pelo nome do seu arquivo de jogo
+                window.location.href = "index.html"; // Alterado para index.html
             });
         }
     </script>
