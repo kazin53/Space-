@@ -1,0 +1,1909 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Balloon</title>
+    <style>
+        /* Estilo para a tela do ícone */
+        .icon-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #121212;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            color: white;
+        }
+        
+        .icon-img {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+        
+        .icon-img:hover {
+            transform: scale(1.1);
+        }
+        
+        .icon-name {
+            font-size: 1.2rem;
+            margin-bottom: 5px;
+        }
+        
+        .icon-details {
+            font-size: 0.9rem;
+            color: #aaa;
+        }
+        
+        /* Estilo para a tela de introdução */
+        .intro-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(to bottom, #1a1a2e, #16213e, #0f3460);
+            z-index: 900;
+        }
+
+        .title {
+            font-size: 5rem;
+            margin-bottom: 2rem;
+            text-shadow: 0 0 10px #00ffff, 0 0 20px #0088ff;
+            animation: glow 2s infinite alternate;
+            z-index: 10;
+        }
+
+        @keyframes glow {
+            from {
+                text-shadow: 0 0 10px #00ffff, 0 0 20px #0088ff;
+            }
+            to {
+                text-shadow: 0 0 15px #00ffff, 0 0 30px #0088ff, 0 0 40px #0044ff;
+            }
+        }
+
+        .start-btn {
+            padding: 15px 40px;
+            font-size: 1.5rem;
+            background: linear-gradient(45deg, #ff00cc, #3333ff);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .start-btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .start-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
+        }
+
+        .start-btn:hover::before {
+            left: 100%;
+        }
+
+        .balloon {
+            position: absolute;
+            width: 60px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 40%, var(--color), var(--dark-color));
+            animation: float calc(var(--speed) * 1s) linear infinite;
+            z-index: 1;
+            filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.3));
+        }
+
+        .balloon::before {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 15px;
+            height: 15px;
+            background: var(--dark-color);
+            clip-path: polygon(50% 100%, 0 0, 100% 0);
+        }
+
+        .balloon::after {
+            content: '';
+            position: absolute;
+            bottom: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 2px;
+            height: 30px;
+            background: #888;
+        }
+
+        @keyframes float {
+            0% {
+                top: -100px;
+                transform: translateX(var(--start-x)) rotate(0deg);
+            }
+            100% {
+                top: 100vh;
+                transform: translateX(calc(var(--start-x) + var(--drift))) rotate(360deg);
+            }
+        }
+
+        .stars {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: twinkle var(--duration) infinite ease-in-out;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.2; }
+            50% { opacity: 1; }
+        }
+
+        /* Estilo para o jogo principal */
+        .game-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background: radial-gradient(ellipse at center, #1a2a6c 0%, #2a3a7c 100%);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .game-screen canvas { 
+            display: block; 
+            touch-action: none;
+        }
+
+        .game-screen #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+            transition: all 0.5s ease;
+            background: rgba(0,0,0,0.3);
+            padding: 10px 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .game-screen #level-indicator {
+            position: absolute;
+            top: 20px;
+            right: 220px;
+            color: white;
+            font-size: 18px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.5s ease;
+        }
+
+        .game-screen #game-over {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.85);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: white;
+            backdrop-filter: blur(5px);
+        }
+
+        .game-screen #restart-btn {
+            margin-top: 30px;
+            padding: 12px 30px;
+            font-size: 20px;
+            background: linear-gradient(135deg, #FF5252, #FF8A80);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 82, 82, 0.3);
+        }
+
+        .game-screen #restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 82, 82, 0.4);
+        }
+
+        .game-screen #pause-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 8px 20px;
+            background: linear-gradient(135deg, #FF5722, #FF8A65);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            z-index: 100;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 10px rgba(255, 87, 34, 0.3);
+        }
+
+        .game-screen #pause-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 87, 34, 0.4);
+        }
+
+        .game-screen .level-up-message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #FFD700;
+            padding: 25px 40px;
+            border-radius: 15px;
+            font-size: 28px;
+            text-align: center;
+            display: none;
+            z-index: 200;
+            animation: pulse 1.5s infinite;
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.3);
+        }
+
+        .game-screen #next-level-indicator {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 12px 15px;
+            border-radius: 8px;
+            display: none;
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .game-screen #combo-meter {
+            position: absolute;
+            top: 80px;
+            left: 20px;
+            color: white;
+            font-size: 18px;
+            z-index: 100;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 15px;
+            border-radius: 8px;
+            display: none;
+            backdrop-filter: blur(3px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        @keyframes pulse {
+            0% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 0.9; }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+            20%, 40%, 60%, 80% { transform: translateX(5px); }
+        }
+
+        .game-screen .shake {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        .game-screen #score-popup {
+            position: absolute;
+            color: gold;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255,215,0,0.7);
+            z-index: 150;
+            display: none;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Tela do ícone -->
+    <div class="icon-screen" id="iconScreen">
+        <img src="icone.png" alt="Space Balloon Icon" class="icon-img" id="appIcon">
+        <div class="icon-name">Space Balloon</div>
+        <div class="icon-details">288.08KB</div>
+    </div>
+    
+    <!-- Tela de introdução -->
+    <div class="intro-screen" id="introScreen">
+        <div class="stars" id="stars"></div>
+        <h1 class="title">SPACE BALLOON</h1>
+        <button class="start-btn" id="startBtn">IR PARA O JOGO</button>
+        
+        <audio id="bgMusic" loop>
+            <source src="musik.mp3" type="audio/mpeg">
+            Seu navegador não suporta o elemento de áudio.
+        </audio>
+    </div>
+
+    <!-- Tela do jogo principal -->
+    <div class="game-screen" id="gameScreen">
+        <!-- Elementos de áudio -->
+        <audio id="gameBgMusic" loop>
+            <source src="son musik.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="popSound">
+            <source src="pop.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="gameOverSound">
+            <source src="musik gamer ouver.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="levelUpSound">
+            <source src="level-up.mp3" type="audio/mpeg">
+        </audio>
+        <audio id="comboSound">
+            <source src="combo.mp3" type="audio/mpeg">
+        </audio>
+
+        <div id="ui">
+            ☂️ <span id="score">0</span> | ❤️ <span id="lives">5</span> | � <span id="highscore">0</span>
+        </div>
+        <div id="level-indicator">Nível: Terra</div>
+        <div id="next-level-indicator">Próximo nível: Espaço (1000 pontos)</div>
+        <div id="combo-meter">Combo: <span id="combo-count">0</span>x</div>
+        <button id="pause-btn">⏸️ Pausar</button>
+        <canvas id="gameCanvas"></canvas>
+
+        <div id="game-over">
+            <h1 style="font-size: 48px; margin-bottom: 20px; text-shadow: 0 0 10px red;">FIM DE JOGO</h1>
+            <p id="final-score" style="font-size: 24px;">Pontuação: 0</p>
+            <p id="final-level" style="font-size: 20px;">Nível alcançado: Terra</p>
+            <p id="final-combo" style="font-size: 18px; color: #FFD700; margin-top: 10px;">Combo máximo: 0x</p>
+            <button id="restart-btn">Jogar Novamente</button>
+        </div>
+        
+        <div id="level-up-message" class="level-up-message">
+            <h2 style="margin: 0; font-size: 36px;">PARABÉNS!</h2>
+            <p style="margin: 10px 0 0; font-size: 24px;">Você alcançou o nível <span id="new-level-name">Espaço</span>!</p>
+        </div>
+
+        <div id="score-popup">+100</div>
+    </div>
+
+    <script>
+        // =============================================
+        // CONTROLE DAS TELAS
+        // =============================================
+        
+        // Quando clicar no ícone
+        document.getElementById('appIcon').addEventListener('click', function() {
+            // Esconde a tela do ícone
+            document.getElementById('iconScreen').style.display = 'none';
+            
+            // Mostra a tela de introdução
+            document.getElementById('introScreen').style.display = 'flex';
+            
+            // Toca a música
+            const bgMusic = document.getElementById('bgMusic');
+            bgMusic.play().catch(e => {
+                console.log("Reprodução automática prevenida - música será tocada após interação");
+                // Configura para tocar quando o usuário clicar em qualquer lugar
+                document.addEventListener('click', function() {
+                    bgMusic.play();
+                }, { once: true });
+            });
+            
+            // Inicia os elementos da tela de introdução
+            initIntro();
+        });
+        
+        function initIntro() {
+            // Criar estrelas de fundo
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.width = `${Math.random() * 3}px`;
+                star.style.height = star.style.width;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.setProperty('--duration', `${5 + Math.random() * 10}s`);
+                starsContainer.appendChild(star);
+            }
+
+            // Criar balões
+            const colors = [
+                { color: '#ff5252', dark: '#c50e29' },
+                { color: '#4285F4', dark: '#0d47a1' },
+                { color: '#FBBC05', dark: '#ff8f00' },
+                { color: '#34A853', dark: '#1b5e20' },
+                { color: '#9C27B0', dark: '#6a1b9a' }
+            ];
+
+            function createBalloon() {
+                const balloon = document.createElement('div');
+                balloon.classList.add('balloon');
+                
+                const colorIndex = Math.floor(Math.random() * colors.length);
+                const color = colors[colorIndex];
+                
+                balloon.style.setProperty('--color', color.color);
+                balloon.style.setProperty('--dark-color', color.dark);
+                balloon.style.setProperty('--start-x', `${Math.random() * 100}%`);
+                balloon.style.setProperty('--drift', `${(Math.random() - 0.5) * 20}%`);
+                balloon.style.setProperty('--speed', `${10 + Math.random() * 20}`);
+                
+                document.getElementById('introScreen').appendChild(balloon);
+                
+                // Remover balão quando sair da tela
+                setTimeout(() => {
+                    balloon.remove();
+                }, parseFloat(balloon.style.getPropertyValue('--speed')) * 1000);
+            }
+
+            // Criar balões periodicamente
+            setInterval(createBalloon, 800);
+            
+            // Iniciar com alguns balões
+            for (let i = 0; i < 10; i++) {
+                setTimeout(createBalloon, i * 300);
+            }
+
+            // Botão para iniciar o jogo principal
+            document.getElementById('startBtn').addEventListener('click', () => {
+                // Pausar a música da introdução
+                document.getElementById('bgMusic').pause();
+                
+                // Esconde a tela de introdução
+                document.getElementById('introScreen').style.display = 'none';
+                
+                // Mostra o jogo principal
+                document.getElementById('gameScreen').style.display = 'block';
+                
+                // Inicia o jogo principal
+                initMainGame();
+            });
+        }
+
+        // =============================================
+        // JOGO PRINCIPAL
+        // =============================================
+
+        function initMainGame() {
+            const canvas = document.getElementById('gameCanvas');
+            const ctx = canvas.getContext('2d');
+            const scoreElement = document.getElementById('score');
+            const livesElement = document.getElementById('lives');
+            const levelElement = document.getElementById('level-indicator');
+            const nextLevelElement = document.getElementById('next-level-indicator');
+            const uiElement = document.getElementById('ui');
+            const highscoreElement = document.getElementById('highscore');
+            const gameOverScreen = document.getElementById('game-over');
+            const finalScoreElement = document.getElementById('final-score');
+            const finalLevelElement = document.getElementById('final-level');
+            const finalComboElement = document.getElementById('final-combo');
+            const restartBtn = document.getElementById('restart-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const levelUpMessage = document.getElementById('level-up-message');
+            const comboMeter = document.getElementById('combo-meter');
+            const comboCount = document.getElementById('combo-count');
+            const scorePopup = document.getElementById('score-popup');
+            
+            // Elementos de áudio
+            const bgMusic = document.getElementById('gameBgMusic');
+            const popSound = document.getElementById('popSound');
+            const gameOverSound = document.getElementById('gameOverSound');
+            const levelUpSound = document.getElementById('levelUpSound');
+            const comboSound = document.getElementById('comboSound');
+            
+            // Ajustar volumes
+            bgMusic.volume = 0.7;
+            popSound.volume = 0.3;
+            gameOverSound.volume = 0.7;
+            levelUpSound.volume = 0.6;
+            comboSound.volume = 0.5;
+            
+            let score = 0;
+            let lives = 5;
+            let currentLevel = 'earth';
+            let transitionActive = false;
+            let transitionProgress = 0;
+            let highscore = localStorage.getItem('highscore') || 0;
+            let lastTime = 0;
+            const fps = 60;
+            let gameActive = true;
+            let isPaused = false;
+            let combo = 0;
+            let maxCombo = 0;
+            let lastClickTime = 0;
+            let comboTimeout;
+            let particles = [];
+            let screenShake = 0;
+            let scorePopups = [];
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            // Iniciar música automaticamente (com tratamento de autoplay policy)
+            function startMusic() {
+                const playPromise = bgMusic.play();
+                
+                if (playPromise !== undefined) {
+                    playPromise.then(_ => {
+                        // Autoplay started
+                    }).catch(error => {
+                        // Autoplay was prevented - show play button
+                        document.addEventListener('click', function() {
+                            bgMusic.play();
+                        }, { once: true });
+                    });
+                }
+            }
+
+            // Iniciar música quando a página carregar
+            startMusic();
+
+            pauseBtn.addEventListener('click', () => {
+                isPaused = !isPaused;
+                pauseBtn.textContent = isPaused ? "▶ Continuar" : "⏸️ Pausar";
+                if (!isPaused && gameActive) {
+                    lastTime = performance.now() - (1000 / fps);
+                    requestAnimationFrame(gameLoop);
+                    bgMusic.play();
+                } else {
+                    bgMusic.pause();
+                }
+            });
+
+            function checkLevelTransition() {
+                if (score >= 1000 && currentLevel === 'earth' && !transitionActive && !isPaused) {
+                    startTransition('space');
+                } else if (score >= 3000 && currentLevel === 'space' && !transitionActive && !isPaused) {
+                    startTransition('hell');
+                } else if (score >= 10000 && currentLevel === 'hell' && !transitionActive && !isPaused) {
+                    startTransition('water');
+                } else if (score >= 20000 && currentLevel === 'water' && !transitionActive && !isPaused) {
+                    startTransition('desert');
+                }
+            }
+
+            function updateNextLevelIndicator() {
+                if (!gameActive || transitionActive) {
+                    nextLevelElement.style.display = 'none';
+                    return;
+                }
+                
+                if (currentLevel === 'earth') {
+                    nextLevelElement.textContent = "Próximo nível: Espaço (1000 pontos)";
+                    nextLevelElement.style.display = 'block';
+                } else if (currentLevel === 'space') {
+                    nextLevelElement.textContent = "Próximo nível: Inferno (3000 pontos)";
+                    nextLevelElement.style.display = 'block';
+                } else if (currentLevel === 'hell') {
+                    nextLevelElement.textContent = "Próximo nível: Oceano (10000 pontos)";
+                    nextLevelElement.style.display = 'block';
+                } else if (currentLevel === 'water') {
+                    nextLevelElement.textContent = "Próximo nível: Deserto (20000 pontos)";
+                    nextLevelElement.style.display = 'block';
+                } else {
+                    nextLevelElement.style.display = 'none';
+                }
+            }
+
+            function startTransition(newLevel) {
+                transitionActive = true;
+                currentLevel = 'transition';
+                
+                if (newLevel === 'space') {
+                    levelElement.textContent = "Nível: Transição para o Espaço!";
+                    document.body.style.background = 'radial-gradient(ellipse at center, #000428 0%, #004e92 100%)';
+                    uiElement.style.textShadow = '0 0 10px #00ffff, 0 0 20px #ff00ff';
+                    uiElement.style.background = 'rgba(0, 20, 40, 0.5)';
+                } else if (newLevel === 'hell') {
+                    levelElement.textContent = "Nível: Transição para o Inferno!";
+                    document.body.style.background = 'radial-gradient(ellipse at center, #8B0000 0%, #FF4500 100%)';
+                    uiElement.style.textShadow = '0 0 10px #ff0000, 0 0 20px #ff8c00';
+                    uiElement.style.background = 'rgba(70, 0, 0, 0.5)';
+                } else if (newLevel === 'water') {
+                    levelElement.textContent = "Nível: Transição para o Oceano!";
+                    document.body.style.background = 'radial-gradient(ellipse at center, #00008B 0%, #1E90FF 100%)';
+                    uiElement.style.textShadow = '0 0 10px #00bfff, 0 0 20px #1e90ff';
+                    uiElement.style.background = 'rgba(0, 20, 70, 0.5)';
+                } else if (newLevel === 'desert') {
+                    levelElement.textContent = "Nível: Transição para o Deserto!";
+                    document.body.style.background = 'radial-gradient(ellipse at center, #D2691E 0%, #F4A460 100%)';
+                    uiElement.style.textShadow = '0 0 10px #ff8c00, 0 0 20px #ffd700';
+                    uiElement.style.background = 'rgba(70, 35, 0, 0.5)';
+                }
+                
+                // Efeito de transição
+                screenShake = 15;
+                levelUpSound.play();
+                
+                setTimeout(() => completeTransition(newLevel), 1500);
+            }
+
+            function completeTransition(newLevel) {
+                currentLevel = newLevel;
+                transitionActive = false;
+                transitionProgress = 0;
+                
+                const levelNames = {
+                    'space': 'Espaço Intergaláctico',
+                    'hell': 'Inferno',
+                    'water': 'Oceano Profundo',
+                    'desert': 'Deserto Ardente'
+                };
+                
+                if (levelNames[newLevel]) {
+                    showLevelUpMessage(levelNames[newLevel]);
+                }
+                
+                if (newLevel === 'space') {
+                    levelElement.textContent = "Nível: Espaço Intergaláctico";
+                    initializeSpaceElements();
+                } else if (newLevel === 'hell') {
+                    levelElement.textContent = "Nível: Inferno";
+                    initializeHellElements();
+                } else if (newLevel === 'water') {
+                    levelElement.textContent = "Nível: Oceano Profundo";
+                    initializeWaterElements();
+                } else if (newLevel === 'desert') {
+                    levelElement.textContent = "Nível: Deserto Ardente";
+                    initializeDesertElements();
+                }
+                
+                updateNextLevelIndicator();
+            }
+
+            function showLevelUpMessage(levelName) {
+                document.getElementById('new-level-name').textContent = levelName;
+                levelUpMessage.style.display = 'block';
+                setTimeout(() => {
+                    levelUpMessage.style.display = 'none';
+                }, 3000);
+            }
+
+            function updateCombo() {
+                const now = Date.now();
+                if (now - lastClickTime > 1000) { // 1 segundo para manter o combo
+                    combo = 0;
+                    comboMeter.style.display = 'none';
+                } else {
+                    combo++;
+                    if (combo > maxCombo) maxCombo = combo;
+                    
+                    if (combo >= 3) {
+                        comboMeter.style.display = 'block';
+                        comboCount.textContent = combo;
+                        
+                        // Efeito visual para combos altos
+                        if (combo === 5) {
+                            comboSound.play();
+                            comboMeter.style.background = 'rgba(255,215,0,0.5)';
+                            comboMeter.style.border = '1px solid gold';
+                        } else if (combo === 10) {
+                            comboSound.play();
+                            comboMeter.style.background = 'rgba(255,69,0,0.5)';
+                            comboMeter.style.border = '1px solid orange';
+                        } else if (combo === 15) {
+                            comboSound.play();
+                            comboMeter.style.background = 'rgba(220,20,60,0.5)';
+                            comboMeter.style.border = '1px solid crimson';
+                        }
+                    }
+                }
+                lastClickTime = now;
+                
+                clearTimeout(comboTimeout);
+                comboTimeout = setTimeout(() => {
+                    combo = 0;
+                    comboMeter.style.display = 'none';
+                    comboMeter.style.background = 'rgba(0,0,0,0.5)';
+                    comboMeter.style.border = '1px solid rgba(255,255,255,0.1)';
+                }, 1000);
+            }
+
+            function createScorePopup(x, y, points) {
+                const popup = {
+                    x: x,
+                    y: y,
+                    text: `+${points}`,
+                    opacity: 1,
+                    life: 60,
+                    vy: -1
+                };
+                scorePopups.push(popup);
+            }
+
+            function drawScorePopups() {
+                ctx.save();
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                
+                for (let i = scorePopups.length - 1; i >= 0; i--) {
+                    const popup = scorePopups[i];
+                    
+                    if (popup.life <= 0) {
+                        scorePopups.splice(i, 1);
+                        continue;
+                    }
+                    
+                    ctx.fillStyle = `rgba(255, 215, 0, ${popup.opacity})`;
+                    ctx.strokeStyle = `rgba(0, 0, 0, ${popup.opacity * 0.7})`;
+                    ctx.lineWidth = 2;
+                    
+                    ctx.strokeText(popup.text, popup.x, popup.y);
+                    ctx.fillText(popup.text, popup.x, popup.y);
+                    
+                    popup.y += popup.vy;
+                    popup.opacity = popup.life / 60;
+                    popup.life--;
+                }
+                ctx.restore();
+            }
+
+            function createParticles(x, y, color, count, size, speed, gravity = 0) {
+                for (let i = 0; i < count; i++) {
+                    particles.push({
+                        x: x,
+                        y: y,
+                        size: Math.random() * size + size/2,
+                        color: color,
+                        vx: (Math.random() - 0.5) * speed,
+                        vy: (Math.random() - 0.5) * speed,
+                        gravity: gravity,
+                        life: 60 + Math.random() * 30,
+                        decay: 0.95 + Math.random() * 0.04
+                    });
+                }
+            }
+
+            function updateParticles() {
+                for (let i = particles.length - 1; i >= 0; i--) {
+                    const p = particles[i];
+                    
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += p.gravity;
+                    p.vx *= 0.98;
+                    p.vy *= 0.98;
+                    p.life--;
+                    p.size *= p.decay;
+                    
+                    if (p.life <= 0 || p.size < 0.5) {
+                        particles.splice(i, 1);
+                    }
+                }
+            }
+
+            function drawParticles() {
+                particles.forEach(p => {
+                    ctx.globalAlpha = Math.min(1, p.life / 30);
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+                ctx.globalAlpha = 1;
+            }
+
+            let earthUmbrellas = [];
+            const earthUmbrellaColors = ['#FF5252', '#4285F4', '#FBBC05', '#34A853'];
+            let earthClouds = [];
+            let rainDrops = [];
+            const rainColor = 'rgba(174, 194, 224, 0.6)';
+
+            function initializeEarthElements() {
+                earthClouds = Array.from({ length: 8 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.6,
+                    speed: 0.2 + Math.random() * 0.3,
+                    size: 50 + Math.random() * 70,
+                    opacity: 0.7 + Math.random() * 0.3
+                }));
+            }
+
+            function createEarthUmbrella() {
+                const speed = 1.5 + Math.random() * 2 + (score / 2000);
+                earthUmbrellas.push({
+                    x: Math.random() * (canvas.width - 70),
+                    y: -70,
+                    speed: speed,
+                    color: earthUmbrellaColors[Math.floor(Math.random() * earthUmbrellaColors.length)],
+                    width: 70,
+                    height: 100,
+                    rotation: Math.random() * 0.2 - 0.1
+                });
+            }
+
+            let spaceUmbrellas = [];
+            const spaceUmbrellaColors = ['#ff00ff', '#00ffff', '#ffff00', '#ff00ff'];
+            let stars = [];
+            let nebulas = [];
+            let meteors = [];
+
+            function initializeSpaceElements() {
+                stars = Array.from({ length: 300 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 3,
+                    opacity: Math.random(),
+                    speed: Math.random() * 0.3,
+                    twinkleSpeed: Math.random() * 0.05
+                }));
+
+                nebulas = Array.from({ length: 5 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.5,
+                    radius: 150 + Math.random() * 250,
+                    color: `hsla(${Math.random() * 360}, 80%, 60%, 0.1)`,
+                    speed: Math.random() * 0.15 - 0.075
+                }));
+            }
+
+            function createSpaceUmbrella() {
+                const speed = 2.5 + Math.random() * 2.5 + (score / 2000);
+                spaceUmbrellas.push({
+                    x: Math.random() * (canvas.width - 80),
+                    y: -70,
+                    speed: speed,
+                    color: spaceUmbrellaColors[Math.floor(Math.random() * spaceUmbrellaColors.length)],
+                    width: 80,
+                    height: 110,
+                    glow: 0,
+                    rotation: Math.random() * 0.3 - 0.15
+                });
+            }
+
+            let hellUmbrellas = [];
+            const hellUmbrellaColors = ['#FF0000', '#FF4500', '#FF8C00', '#FFD700', '#FF6347', '#FFA07A'];
+            let lavaBubbles = [];
+            let fireParticles = [];
+
+            function initializeHellElements() {
+                lavaBubbles = Array.from({ length: 30 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height + Math.random() * 50,
+                    size: 15 + Math.random() * 25,
+                    speed: 1.5 + Math.random() * 4,
+                    opacity: 0.3 + Math.random() * 0.7
+                }));
+            }
+
+            function createHellUmbrella() {
+                const speed = 3.0 + Math.random() * 3.0 + (score / 2500);
+                hellUmbrellas.push({
+                    x: Math.random() * (canvas.width - 100),
+                    y: -70,
+                    speed: speed,
+                    color: hellUmbrellaColors[Math.floor(Math.random() * hellUmbrellaColors.length)],
+                    width: 100,
+                    height: 140,
+                    onFire: true,
+                    rotation: Math.random() * 0.4 - 0.2
+                });
+            }
+
+            let waterUmbrellas = [];
+            const waterUmbrellaColors = ['#00BFFF', '#1E90FF', '#4169E1', '#4682B4'];
+            let bubbles = [];
+            let fish = [];
+
+            function initializeWaterElements() {
+                bubbles = Array.from({ length: 40 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height + Math.random() * 100,
+                    size: 5 + Math.random() * 20,
+                    speed: 1.5 + Math.random() * 3,
+                    opacity: 0.4 + Math.random() * 0.6
+                }));
+            }
+
+            function createWaterUmbrella() {
+                const speed = 2.8 + Math.random() * 3.0 + (score / 3000);
+                waterUmbrellas.push({
+                    x: Math.random() * (canvas.width - 90),
+                    y: -70,
+                    speed: speed,
+                    color: waterUmbrellaColors[Math.floor(Math.random() * waterUmbrellaColors.length)],
+                    width: 90,
+                    height: 130,
+                    bubbleTrail: true,
+                    rotation: Math.random() * 0.2 - 0.1
+                });
+            }
+
+            let desertUmbrellas = [];
+            const desertUmbrellaColors = ['#D2691E', '#F4A460', '#CD853F', '#A0522D'];
+            let sandParticles = [];
+            let mirages = [];
+
+            function initializeDesertElements() {
+                sandParticles = Array.from({ length: 150 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: 1 + Math.random() * 4,
+                    speed: 0.8 + Math.random() * 1.5,
+                    opacity: 0.3 + Math.random() * 0.7
+                }));
+            }
+
+            function createDesertUmbrella() {
+                const speed = 3.2 + Math.random() * 3.0 + (score / 3500);
+                desertUmbrellas.push({
+                    x: Math.random() * (canvas.width - 95),
+                    y: -70,
+                    speed: speed,
+                    color: desertUmbrellaColors[Math.floor(Math.random() * desertUmbrellaColors.length)],
+                    width: 95,
+                    height: 135,
+                    sandEffect: true,
+                    rotation: Math.random() * 0.3 - 0.15
+                });
+            }
+
+            function drawEarthUmbrella(u) {
+                ctx.save();
+                ctx.translate(u.x + u.width/2, u.y + u.height/2);
+                ctx.rotate(u.rotation);
+                
+                // Cabo do guarda-chuva
+                ctx.fillStyle = '#5D4037';
+                ctx.fillRect(-2, -u.height/2 + 10, 4, u.height - 10);
+                
+                // Cúpula do guarda-chuva
+                ctx.fillStyle = u.color;
+                ctx.beginPath();
+                ctx.arc(0, -u.height/2 + u.width/2, u.width/2, 0, Math.PI, true);
+                ctx.fill();
+                
+                // Detalhes
+                ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -u.height/2 + 10);
+                    ctx.lineTo(
+                        Math.cos(angle) * u.width/2,
+                        -u.height/2 + u.width/2 + Math.sin(angle) * u.width/2
+                    );
+                    ctx.stroke();
+                }
+                
+                ctx.restore();
+            }
+
+            function drawSpaceUmbrella(u) {
+                ctx.save();
+                ctx.translate(u.x + u.width/2, u.y + u.height/2);
+                ctx.rotate(u.rotation);
+                
+                ctx.shadowBlur = u.glow;
+                ctx.shadowColor = u.color;
+                
+                // Cabo do guarda-chuva
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(-2, -u.height/2 + 10, 4, u.height - 10);
+                
+                // Cúpula do guarda-chuva
+                const gradient = ctx.createRadialGradient(
+                    0, -u.height/2 + u.width/2, 0,
+                    0, -u.height/2 + u.width/2, u.width/2
+                );
+                gradient.addColorStop(0, u.color);
+                gradient.addColorStop(1, 'rgba(255,255,255,0.5)');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, -u.height/2 + u.width/2, u.width/2, 0, Math.PI, true);
+                ctx.fill();
+                
+                // Estrelas na cúpula
+                for (let i = 0; i < 5; i++) {
+                    const angle = Math.random() * Math.PI;
+                    const dist = Math.random() * u.width/3;
+                    ctx.fillStyle = 'white';
+                    ctx.beginPath();
+                    ctx.arc(
+                        Math.cos(angle) * dist,
+                        -u.height/2 + u.width/2 + Math.sin(angle) * dist,
+                        1 + Math.random() * 2,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                
+                ctx.shadowBlur = 0;
+                u.glow = Math.min(25, u.glow + 0.7);
+                
+                ctx.restore();
+            }
+
+            function drawHellUmbrella(u) {
+                ctx.save();
+                ctx.translate(u.x + u.width/2, u.y + u.height/2);
+                ctx.rotate(u.rotation);
+                
+                // Cabo do guarda-chuva
+                ctx.fillStyle = '#FF4500';
+                ctx.fillRect(-2, -u.height/2 + 10, 4, u.height - 10);
+                
+                // Cúpula do guarda-chuva
+                const gradient = ctx.createRadialGradient(
+                    0, -u.height/2 + u.width/2, 0,
+                    0, -u.height/2 + u.width/2, u.width/2
+                );
+                gradient.addColorStop(0, u.color);
+                gradient.addColorStop(0.7, '#FF8C00');
+                gradient.addColorStop(1, '#FFD700');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, -u.height/2 + u.width/2, u.width/2, 0, Math.PI, true);
+                ctx.fill();
+                
+                // Chamas
+                if (u.onFire) {
+                    for (let i = 0; i < 5; i++) {
+                        const size = Math.random() * 10 + 5;
+                        ctx.fillStyle = `rgba(255, ${Math.floor(100 + Math.random() * 155)}, 0, ${Math.random() * 0.7})`;
+                        ctx.beginPath();
+                        ctx.moveTo(0, -u.height/2 - 10 + Math.random() * 15);
+                        for (let j = 0; j < 5; j++) {
+                            const angle = j / 5 * Math.PI * 2;
+                            const radius = size * (0.3 + Math.random() * 0.7);
+                            ctx.lineTo(
+                                Math.cos(angle) * radius,
+                                -u.height/2 - 10 + Math.random() * 15 + Math.sin(angle) * radius
+                            );
+                        }
+                        ctx.closePath();
+                        ctx.fill();
+                    }
+                }
+                
+                ctx.restore();
+            }
+
+            function drawWaterUmbrella(u) {
+                ctx.save();
+                ctx.translate(u.x + u.width/2, u.y + u.height/2);
+                ctx.rotate(u.rotation);
+                
+                // Cabo do guarda-chuva
+                ctx.fillStyle = '#4682B4';
+                ctx.fillRect(-2, -u.height/2 + 10, 4, u.height - 10);
+                
+                // Cúpula do guarda-chuva
+                const gradient = ctx.createRadialGradient(
+                    0, -u.height/2 + u.width/2, 0,
+                    0, -u.height/2 + u.width/2, u.width/2
+                );
+                gradient.addColorStop(0, u.color);
+                gradient.addColorStop(1, '#00BFFF');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, -u.height/2 + u.width/2, u.width/2, 0, Math.PI, true);
+                ctx.fill();
+                
+                // Reflexos de água
+                for (let i = 0; i < 3; i++) {
+                    const angle = Math.random() * Math.PI;
+                    const dist = Math.random() * u.width/3;
+                    ctx.fillStyle = `rgba(255,255,255,${0.3 + Math.random() * 0.4})`;
+                    ctx.beginPath();
+                    ctx.arc(
+                        Math.cos(angle) * dist,
+                        -u.height/2 + u.width/2 + Math.sin(angle) * dist,
+                        3 + Math.random() * 5,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                
+                // Bolhas
+                if (u.bubbleTrail && Math.random() > 0.7) {
+                    ctx.fillStyle = `rgba(173, 216, 230, ${0.3 + Math.random() * 0.7})`;
+                    ctx.beginPath();
+                    ctx.arc(
+                        Math.random() * 20 - 10,
+                        u.height/2 - 10 + Math.random() * 20,
+                        Math.random() * 5 + 2,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+
+            function drawDesertUmbrella(u) {
+                ctx.save();
+                ctx.translate(u.x + u.width/2, u.y + u.height/2);
+                ctx.rotate(u.rotation);
+                
+                // Cabo do guarda-chuva
+                ctx.fillStyle = '#8B4513';
+                ctx.fillRect(-2, -u.height/2 + 10, 4, u.height - 10);
+                
+                // Cúpula do guarda-chuva
+                const gradient = ctx.createRadialGradient(
+                    0, -u.height/2 + u.width/2, 0,
+                    0, -u.height/2 + u.width/2, u.width/2
+                );
+                gradient.addColorStop(0, u.color);
+                gradient.addColorStop(1, '#F4A460');
+                
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(0, -u.height/2 + u.width/2, u.width/2, 0, Math.PI, true);
+                ctx.fill();
+                
+                // Padrão de deserto
+                ctx.strokeStyle = 'rgba(139,69,19,0.5)';
+                ctx.lineWidth = 1;
+                for (let i = 0; i < 8; i++) {
+                    const angle = (i / 8) * Math.PI;
+                    ctx.beginPath();
+                    ctx.moveTo(0, -u.height/2 + 10);
+                    ctx.lineTo(
+                        Math.cos(angle) * u.width/2,
+                        -u.height/2 + u.width/2 + Math.sin(angle) * u.width/2
+                    );
+                    ctx.stroke();
+                    
+                    // Linhas horizontais
+                    if (i % 2 === 0) {
+                        ctx.beginPath();
+                        ctx.arc(
+                            0, -u.height/2 + u.width/2,
+                            i/8 * u.width/2,
+                            0, Math.PI
+                        );
+                        ctx.stroke();
+                    }
+                }
+                
+                // Efeito de areia
+                if (u.sandEffect && Math.random() > 0.6) {
+                    ctx.fillStyle = `rgba(244, 164, 96, ${0.4 + Math.random() * 0.6})`;
+                    ctx.beginPath();
+                    ctx.arc(
+                        Math.random() * 30 - 15,
+                        u.height/2 - 5 + Math.random() * 15,
+                        Math.random() * 6 + 3,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                }
+                
+                ctx.restore();
+            }
+
+            function drawCloud(x, y, size, opacity) {
+                ctx.save();
+                ctx.globalAlpha = opacity;
+                
+                // Sombra
+                ctx.fillStyle = 'rgba(0,0,0,0.1)';
+                ctx.beginPath();
+                ctx.arc(x + size * 0.1, y + size * 0.1, size * 0.6, 0, Math.PI * 2);
+                ctx.arc(x + size * 0.5, y - size * 0.1, size * 0.4, 0, Math.PI * 2);
+                ctx.arc(x + size * 0.9, y + size * 0.1, size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Nuvem principal
+                ctx.fillStyle = 'white';
+                ctx.beginPath();
+                ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+                ctx.arc(x + size * 0.4, y - size * 0.2, size * 0.4, 0, Math.PI * 2);
+                ctx.arc(x + size * 0.8, y, size * 0.5, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+
+            function drawStars() {
+                stars.forEach(star => {
+                    star.opacity += star.twinkleSpeed;
+                    if (star.opacity > 1 || star.opacity < 0.3) star.twinkleSpeed *= -1;
+                    
+                    ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                    
+                    // Estrelas brilhantes têm um efeito de glow
+                    if (star.opacity > 0.8) {
+                        ctx.shadowBlur = 3;
+                        ctx.shadowColor = 'white';
+                    }
+                    
+                    ctx.fillRect(star.x, star.y, star.size, star.size);
+                    ctx.shadowBlur = 0;
+                    
+                    star.y += star.speed;
+                    if (star.y > canvas.height) {
+                        star.y = 0;
+                        star.x = Math.random() * canvas.width;
+                    }
+                });
+            }
+
+            function drawNebulas() {
+                nebulas.forEach(nebula => {
+                    const gradient = ctx.createRadialGradient(
+                        nebula.x, nebula.y, 0,
+                        nebula.x, nebula.y, nebula.radius
+                    );
+                    gradient.addColorStop(0, nebula.color);
+                    gradient.addColorStop(1, 'transparent');
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(nebula.x, nebula.y, nebula.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    nebula.x += nebula.speed;
+                    if (nebula.x < -nebula.radius * 2) nebula.x = canvas.width + nebula.radius;
+                    if (nebula.x > canvas.width + nebula.radius * 2) nebula.x = -nebula.radius;
+                });
+            }
+
+            function drawMeteors() {
+                ctx.lineWidth = 2;
+                meteors.forEach((meteor, i) => {
+                    // Cauda do meteoro
+                    const gradient = ctx.createLinearGradient(
+                        meteor.x, meteor.y,
+                        meteor.x - meteor.size * 5, meteor.y + meteor.size * 5
+                    );
+                    gradient.addColorStop(0, meteor.color);
+                    gradient.addColorStop(1, 'transparent');
+                    
+                    ctx.strokeStyle = gradient;
+                    ctx.beginPath();
+                    ctx.moveTo(meteor.x, meteor.y);
+                    ctx.lineTo(meteor.x - meteor.size * 5, meteor.y + meteor.size * 5);
+                    ctx.stroke();
+                    
+                    // Núcleo do meteoro
+                    ctx.fillStyle = meteor.color;
+                    ctx.beginPath();
+                    ctx.arc(meteor.x, meteor.y, meteor.size / 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    meteor.y += meteor.speed;
+                    meteor.x += meteor.speed * 0.5;
+                    if (meteor.y > canvas.height) meteors.splice(i, 1);
+                });
+            }
+
+            function drawLavaBubbles() {
+                lavaBubbles.forEach((bubble, i) => {
+                    // Sombra
+                    ctx.fillStyle = `rgba(139, 0, 0, ${bubble.opacity * 0.5})`;
+                    ctx.beginPath();
+                    ctx.arc(bubble.x + bubble.size * 0.2, bubble.y + bubble.size * 0.2, bubble.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bolha principal
+                    const gradient = ctx.createRadialGradient(
+                        bubble.x - bubble.size * 0.2, bubble.y - bubble.size * 0.2, 0,
+                        bubble.x, bubble.y, bubble.size
+                    );
+                    gradient.addColorStop(0, `rgba(255, ${Math.floor(100 + Math.random() * 100)}, 0, ${bubble.opacity})`);
+                    gradient.addColorStop(1, `rgba(255, 69, 0, ${bubble.opacity * 0.7})`);
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Reflexo
+                    ctx.fillStyle = `rgba(255, 255, 255, ${bubble.opacity * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(
+                        bubble.x - bubble.size * 0.3,
+                        bubble.y - bubble.size * 0.3,
+                        bubble.size * 0.3,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                    
+                    bubble.y -= bubble.speed;
+                    if (bubble.y < -bubble.size) {
+                        bubble.y = canvas.height + Math.random() * 50;
+                        bubble.x = Math.random() * canvas.width;
+                    }
+                    
+                    if (Math.random() > 0.98 && lavaBubbles.length < 40) {
+                        lavaBubbles.push({
+                            x: Math.random() * canvas.width,
+                            y: canvas.height + Math.random() * 50,
+                            size: 15 + Math.random() * 25,
+                            speed: 1.5 + Math.random() * 4,
+                            opacity: 0.3 + Math.random() * 0.7
+                        });
+                    }
+                });
+            }
+
+            function drawBubbles() {
+                bubbles.forEach((bubble, i) => {
+                    // Sombra
+                    ctx.fillStyle = `rgba(0, 0, 139, ${bubble.opacity * 0.3})`;
+                    ctx.beginPath();
+                    ctx.arc(bubble.x + bubble.size * 0.2, bubble.y + bubble.size * 0.2, bubble.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Bolha principal
+                    const gradient = ctx.createRadialGradient(
+                        bubble.x - bubble.size * 0.2, bubble.y - bubble.size * 0.2, 0,
+                        bubble.x, bubble.y, bubble.size
+                    );
+                    gradient.addColorStop(0, `rgba(173, 216, 230, ${bubble.opacity})`);
+                    gradient.addColorStop(1, `rgba(135, 206, 250, ${bubble.opacity * 0.7})`);
+                    
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Reflexo
+                    ctx.fillStyle = `rgba(255, 255, 255, ${bubble.opacity * 0.4})`;
+                    ctx.beginPath();
+                    ctx.arc(
+                        bubble.x - bubble.size * 0.2,
+                        bubble.y - bubble.size * 0.2,
+                        bubble.size * 0.2,
+                        0, Math.PI * 2
+                    );
+                    ctx.fill();
+                    
+                    bubble.y -= bubble.speed;
+                    if (bubble.y < -bubble.size) {
+                        bubble.y = canvas.height + Math.random() * 100;
+                        bubble.x = Math.random() * canvas.width;
+                    }
+                    
+                    if (Math.random() > 0.97 && bubbles.length < 60) {
+                        bubbles.push({
+                            x: Math.random() * canvas.width,
+                            y: canvas.height + Math.random() * 100,
+                            size: 5 + Math.random() * 20,
+                            speed: 1.5 + Math.random() * 3,
+                            opacity: 0.4 + Math.random() * 0.6
+                        });
+                    }
+                });
+            }
+
+            function drawSandParticles() {
+                sandParticles.forEach((particle, i) => {
+                    ctx.fillStyle = `rgba(244, 164, 96, ${particle.opacity})`;
+                    ctx.beginPath();
+                    ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    particle.x += particle.speed;
+                    if (particle.x > canvas.width + particle.size) {
+                        particle.x = -particle.size;
+                        particle.y = Math.random() * canvas.height;
+                    }
+                    
+                    if (Math.random() > 0.99 && sandParticles.length < 200) {
+                        sandParticles.push({
+                            x: -10,
+                            y: Math.random() * canvas.height,
+                            size: 1 + Math.random() * 4,
+                            speed: 0.8 + Math.random() * 1.5,
+                            opacity: 0.3 + Math.random() * 0.7
+                        });
+                    }
+                });
+            }
+
+            function createRain() {
+                if (Math.random() > 0.5 && !isPaused) {
+                    for (let i = 0; i < 3; i++) {
+                        rainDrops.push({
+                            x: Math.random() * canvas.width,
+                            y: -5 - Math.random() * 20,
+                            length: 10 + Math.random() * 20,
+                            speed: 5 + Math.random() * 5 + (score / 1000),
+                            thickness: Math.random() * 0.5 + 0.5
+                        });
+                    }
+                }
+            }
+
+            function drawRain() {
+                ctx.strokeStyle = rainColor;
+                rainDrops.forEach((drop, i) => {
+                    ctx.lineWidth = drop.thickness;
+                    ctx.beginPath();
+                    ctx.moveTo(drop.x, drop.y);
+                    ctx.lineTo(drop.x + drop.speed * 0.3, drop.y + drop.length);
+                    ctx.stroke();
+                    
+                    if (!isPaused) {
+                        drop.y += drop.speed;
+                        drop.x += drop.speed * 0.1;
+                    }
+                    
+                    if (drop.y > canvas.height) rainDrops.splice(i, 1);
+                });
+            }
+
+            function createMeteor() {
+                if (Math.random() > 0.98 && !isPaused) {
+                    meteors.push({
+                        x: Math.random() * canvas.width,
+                        y: -50,
+                        speed: 10 + Math.random() * 8 + (score / 3000),
+                        size: 4 + Math.random() * 6,
+                        color: `hsla(${Math.random() * 60 + 20}, 100%, 50%, 0.8)`
+                    });
+                }
+            }
+
+            function drawTransition() {
+                ctx.fillStyle = `rgba(0, 0, 0, ${transitionProgress})`;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                if (transitionProgress < 1 && !isPaused) {
+                    transitionProgress += 0.02;
+                    
+                    const starCount = Math.floor(transitionProgress * 150);
+                    for (let i = 0; i < starCount; i++) {
+                        if (i < stars.length) {
+                            ctx.fillStyle = `rgba(255, 255, 255, ${transitionProgress * stars[i].opacity})`;
+                            ctx.fillRect(stars[i].x, stars[i].y, stars[i].size, stars[i].size);
+                        }
+                    }
+                }
+            }
+
+            function showGameOver() {
+                gameActive = false;
+                isPaused = true;
+                pauseBtn.textContent = "⏸️ Pausar";
+                
+                if (score > highscore) {
+                    highscore = score;
+                    localStorage.setItem('highscore', highscore);
+                    highscoreElement.textContent = highscore;
+                }
+                
+                finalScoreElement.textContent = `Pontuação: ${score}`;
+                finalLevelElement.textContent = `Nível alcançado: ${
+                    currentLevel === 'earth' ? 'Terra' : 
+                    currentLevel === 'space' ? 'Espaço' : 
+                    currentLevel === 'hell' ? 'Inferno' : 
+                    currentLevel === 'water' ? 'Oceano' : 'Deserto'
+                }`;
+                finalComboElement.textContent = `Combo máximo: ${maxCombo}x`;
+                gameOverScreen.style.display = 'flex';
+                
+                // Efeito de game over
+                screenShake = 20;
+                
+                // Tocar música de game over e parar música de fundo
+                bgMusic.pause();
+                bgMusic.currentTime = 0;
+                gameOverSound.play();
+            }
+
+            function resetGame() {
+                score = 0;
+                lives = 6;
+                currentLevel = 'earth';
+                transitionActive = false;
+                transitionProgress = 0;
+                gameActive = true;
+                isPaused = false;
+                combo = 0;
+                maxCombo = 0;
+                particles = [];
+                screenShake = 0;
+                scorePopups = [];
+                pauseBtn.textContent = "⏸️ Pausar";
+                
+                earthUmbrellas = [];
+                spaceUmbrellas = [];
+                hellUmbrellas = [];
+                waterUmbrellas = [];
+                desertUmbrellas = [];
+                rainDrops = [];
+                meteors = [];
+                lavaBubbles = [];
+                bubbles = [];
+                sandParticles = [];
+                
+                document.body.style.background = 'radial-gradient(ellipse at center, #1a2a6c 0%, #2a3a7c 100%)';
+                uiElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+                uiElement.style.background = 'rgba(0,0,0,0.3)';
+                levelElement.textContent = "Nível: Terra";
+                
+                scoreElement.textContent = score;
+                livesElement.textContent = lives;
+                highscoreElement.textContent = highscore;
+                comboMeter.style.display = 'none';
+                
+                gameOverScreen.style.display = 'none';
+                levelUpMessage.style.display = 'none';
+                
+                // Parar música de game over e iniciar música de fundo
+                gameOverSound.pause();
+                gameOverSound.currentTime = 0;
+                bgMusic.currentTime = 0;
+                bgMusic.play();
+                
+                initializeEarthElements();
+                updateNextLevelIndicator();
+                lastTime = performance.now();
+                requestAnimationFrame(gameLoop);
+            }
+
+            function gameLoop(timestamp) {
+                if (!gameActive || isPaused) {
+                    if (!gameActive) return;
+                    requestAnimationFrame(gameLoop);
+                    return;
+                }
+                
+                if (timestamp - lastTime > 1000 / fps) {
+                    lastTime = timestamp;
+                    
+                    // Aplicar screen shake se necessário
+                    const shakeX = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+                    const shakeY = screenShake > 0 ? (Math.random() - 0.5) * screenShake : 0;
+                    screenShake = Math.max(0, screenShake - 1);
+                    
+                    ctx.save();
+                    ctx.translate(shakeX, shakeY);
+                    
+                    // Fundo com efeito de desfoque para movimento
+                    if (currentLevel === 'earth') {
+                        ctx.fillStyle = 'rgba(26, 42, 108, 0.2)';
+                    } else if (currentLevel === 'space') {
+                        ctx.fillStyle = 'rgba(0, 10, 30, 0.2)';
+                    } else if (currentLevel === 'hell') {
+                        ctx.fillStyle = 'rgba(139, 0, 0, 0.2)';
+                    } else if (currentLevel === 'water') {
+                        ctx.fillStyle = 'rgba(0, 0, 139, 0.2)';
+                    } else if (currentLevel === 'desert') {
+                        ctx.fillStyle = 'rgba(210, 105, 30, 0.2)';
+                    } else {
+                        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                    }
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    checkLevelTransition();
+                    updateNextLevelIndicator();
+                    
+                    // Desenhar elementos específicos do nível
+                    if (currentLevel === 'earth') {
+                        earthClouds.forEach(cloud => {
+                            cloud.x += cloud.speed;
+                            if (cloud.x > canvas.width + cloud.size) cloud.x = -cloud.size;
+                            drawCloud(cloud.x, cloud.y, cloud.size, cloud.opacity);
+                        });
+                        
+                        createRain();
+                        drawRain();
+                        
+                        earthUmbrellas.forEach((u, i) => {
+                            u.y += u.speed;
+                            u.rotation += (Math.random() - 0.5) * 0.02;
+                            drawEarthUmbrella(u);
+                            
+                            if (u.y > canvas.height) {
+                                earthUmbrellas.splice(i, 1);
+                                lives--;
+                                livesElement.textContent = lives;
+                                if (lives <= 0) showGameOver();
+                            }
+                        });
+                        
+                        if (Math.random() < 0.02) createEarthUmbrella();
+                        
+                    } else if (currentLevel === 'space') {
+                        drawStars();
+                        drawNebulas();
+                        
+                        createMeteor();
+                        drawMeteors();
+                        
+                        spaceUmbrellas.forEach((u, i) => {
+                            u.y += u.speed;
+                            u.rotation += (Math.random() - 0.5) * 0.03;
+                            drawSpaceUmbrella(u);
+                            
+                            if (u.y > canvas.height) {
+                                spaceUmbrellas.splice(i, 1);
+                                lives--;
+                                livesElement.textContent = lives;
+                                if (lives <= 0) showGameOver();
+                            }
+                        });
+                        
+                        if (Math.random() < 0.02) createSpaceUmbrella();
+                        
+                    } else if (currentLevel === 'hell') {
+                        drawLavaBubbles();
+                        
+                        hellUmbrellas.forEach((u, i) => {
+                            u.y += u.speed;
+                            u.rotation += (Math.random() - 0.5) * 0.04;
+                            drawHellUmbrella(u);
+                            
+                            if (u.y > canvas.height) {
+                                hellUmbrellas.splice(i, 1);
+                                lives--;
+                                livesElement.textContent = lives;
+                                if (lives <= 0) showGameOver();
+                            }
+                        });
+                        
+                        if (Math.random() < 0.025) createHellUmbrella();
+                        
+                    } else if (currentLevel === 'water') {
+                        drawBubbles();
+                        
+                        waterUmbrellas.forEach((u, i) => {
+                            u.y += u.speed;
+                            u.rotation += (Math.random() - 0.5) * 0.02;
+                            drawWaterUmbrella(u);
+                            
+                            if (u.y > canvas.height) {
+                                waterUmbrellas.splice(i, 1);
+                                lives--;
+                                livesElement.textContent = lives;
+                                if (lives <= 0) showGameOver();
+                            }
+                        });
+                        
+                        if (Math.random() < 0.025) createWaterUmbrella();
+                        
+                    } else if (currentLevel === 'desert') {
+                        drawSandParticles();
+                        
+                        desertUmbrellas.forEach((u, i) => {
+                            u.y += u.speed;
+                            u.rotation += (Math.random() - 0.5) * 0.03;
+                            drawDesertUmbrella(u);
+                            
+                            if (u.y > canvas.height) {
+                                desertUmbrellas.splice(i, 1);
+                                lives--;
+                                livesElement.textContent = lives;
+                                if (lives <= 0) showGameOver();
+                            }
+                        });
+                        
+                        if (Math.random() < 0.025) createDesertUmbrella();
+                        
+                    } else if (currentLevel === 'transition') {
+                        drawTransition();
+                    }
+                    
+                    // Atualizar e desenhar partículas
+                    updateParticles();
+                    drawParticles();
+                    
+                    // Desenhar popups de pontuação
+                    drawScorePopups();
+                    
+                    // Atualizar UI
+                    scoreElement.textContent = score;
+                    
+                    ctx.restore();
+                }
+                
+                requestAnimationFrame(gameLoop);
+            }
+
+            function isClickInsideUmbrella(x, y, u) {
+                const centerX = u.x + u.width/2;
+                const centerY = u.y + u.width/2;
+                const radius = u.width/2;
+                return (
+                    y > u.y &&
+                    Math.sqrt((x - centerX) ** 2 + (y - centerY) ** 2) <= radius * 1.2
+                );
+            }
+
+            function handleClick(x, y) {
+                if (!gameActive || transitionActive || isPaused) return;
+                
+                let clicked = false;
+                let pointsEarned = 0;
+                
+                if (currentLevel === 'earth') {
+                    earthUmbrellas.forEach((u, i) => {
+                        if (isClickInsideUmbrella(x, y, u)) {
+                            createParticles(u.x + u.width/2, u.y + u.height/2, u.color, 20, 5, 5, 0.1);
+                            createScorePopup(u.x + u.width/2, u.y, 10);
+                            
+                            earthUmbrellas.splice(i, 1);
+                            pointsEarned = 10;
+                            clicked = true;
+                        }
+                    });
+                } else if (currentLevel === 'space') {
+                    spaceUmbrellas.forEach((u, i) => {
+                        if (isClickInsideUmbrella(x, y, u)) {
+                            createParticles(u.x + u.width/2, u.y + u.height/2, u.color, 30, 8, 8, 0);
+                            createScorePopup(u.x + u.width/2, u.y, 20);
+                            
+                            spaceUmbrellas.splice(i, 1);
+                            pointsEarned = 20;
+                            clicked = true;
+                        }
+                    });
+                } else if (currentLevel === 'hell') {
+                    hellUmbrellas.forEach((u, i) => {
+                        if (isClickInsideUmbrella(x, y, u)) {
+                            for (let j = 0; j < 3; j++) {
+                                createParticles(u.x + u.width/2, u.y + u.height/2, 
+                                    `hsl(${20 + j * 10}, 100%, 50%)`, 15, 10, 12, -0.1);
+                            }
+                            createScorePopup(u.x + u.width/2, u.y, 50);
+                            
+                            hellUmbrellas.splice(i, 1);
+                            pointsEarned = 50;
+                            clicked = true;
+                        }
+                    });
+                } else if (currentLevel === 'water') {
+                    waterUmbrellas.forEach((u, i) => {
+                        if (isClickInsideUmbrella(x, y, u)) {
+                            createParticles(u.x + u.width/2, u.y + u.height/2, 'rgba(173, 216, 230, 0.8)', 25, 7, 6, -0.2);
+                            createScorePopup(u.x + u.width/2, u.y, 100);
+                            
+                            waterUmbrellas.splice(i, 1);
+                            pointsEarned = 100;
+                            clicked = true;
+                        }
+                    });
+                } else if (currentLevel === 'desert') {
+                    desertUmbrellas.forEach((u, i) => {
+                        if (isClickInsideUmbrella(x, y, u)) {
+                            createParticles(u.x + u.width/2, u.y + u.height/2, 'rgba(244, 164, 96, 0.8)', 35, 7, 7, 0.1);
+                            createScorePopup(u.x + u.width/2, u.y, 150);
+                            
+                            desertUmbrellas.splice(i, 1);
+                            pointsEarned = 150;
+                            clicked = true;
+                        }
+                    });
+                }
+                
+                if (clicked) {
+                    score += pointsEarned;
+                    updateCombo();
+                    popSound.currentTime = 0;
+                    popSound.play();
+                    
+                    // Efeito de clique
+                    if (combo >= 5) {
+                        screenShake = Math.min(10, combo);
+                    }
+                }
+            }
+
+            function getTouchPos(canvasDom, touchEvent) {
+                const rect = canvasDom.getBoundingClientRect();
+                return {
+                    x: touchEvent.touches[0].clientX - rect.left,
+                    y: touchEvent.touches[0].clientY - rect.top
+                };
+            }
+
+            canvas.addEventListener('click', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                handleClick(e.clientX - rect.left, e.clientY - rect.top);
+            });
+
+            canvas.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const touchPos = getTouchPos(canvas, e);
+                handleClick(touchPos.x, touchPos.y);
+            }, { passive: false });
+
+            canvas.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+            }, { passive: false });
+
+            restartBtn.addEventListener('click', resetGame);
+
+            // Efeito hover nos botões
+            restartBtn.addEventListener('mouseover', () => {
+                restartBtn.style.transform = 'translateY(-2px)';
+                restartBtn.style.boxShadow = '0 6px 20px rgba(255, 82, 82, 0.4)';
+            });
+            restartBtn.addEventListener('mouseout', () => {
+                restartBtn.style.transform = 'translateY(0)';
+                restartBtn.style.boxShadow = '0 4px 15px rgba(255, 82, 82, 0.3)';
+            });
+            pauseBtn.addEventListener('mouseover', () => {
+                pauseBtn.style.transform = 'translateY(-2px)';
+                pauseBtn.style.boxShadow = '0 6px 15px rgba(255, 87, 34, 0.4)';
+            });
+            pauseBtn.addEventListener('mouseout', () => {
+                pauseBtn.style.transform = 'translateY(0)';
+                pauseBtn.style.boxShadow = '0 4px 10px rgba(255, 87, 34, 0.3)';
+            });
+
+            // Inicializar o jogo
+            initializeEarthElements();
+            highscoreElement.textContent = highscore;
+            updateNextLevelIndicator();
+            lastTime = performance.now();
+            requestAnimationFrame(gameLoop);
+        }
+    </script>
+</body>
+</html>
