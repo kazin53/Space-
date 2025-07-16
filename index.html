@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Space Balloon</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+            background: radial-gradient(circle, rgba(100,200,255,0.8), rgba(0,100,200,0.9));
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+        }
+        canvas {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        #ui {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            font-size: 24px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+            display: flex;
+            gap: 20px;
+        }
+        #level-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            color: white;
+            font-size: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+            z-index: 100;
+            text-align: right;
+        }
+        #game-over, #game-win, #pause-screen, #settings-screen, #version-select-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #game-over.active, #game-win.active, #pause-screen.active, #settings-screen.active, #version-select-screen.active {
+            opacity: 1;
+        }
+        #game-over h1, #game-win h1, #pause-screen h1, #settings-screen h1, #version-select-screen h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+        }
+        #game-over h1 { color: #FF5252; }
+        #game-win h1 { color: #4CAF50; text-shadow: 2px 2px 10px rgba(0, 255, 0, 0.7); animation: win-pulse 1.5s infinite; }
+        @keyframes win-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        #restart-btn, #play-again-win-btn, #pause-btn, #resume-btn, .game-button, #settings-back-btn, #back-to-start-btn, .version-button, #version-back-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.5em;
+            background: linear-gradient(45deg, #FF5252, #FF9800);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .game-button:hover, #settings-back-btn:hover, #back-to-start-btn:hover, .version-button:hover, #version-back-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        #pause-btn {
+            position: absolute;
+            top: 20px;
+            left: calc(50% - 75px);
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            z-index: 100;
+        }
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(100,200,255,0.8), rgba(0,100,200,0.9));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+        }
+        #start-screen.active {
+            opacity: 1;
+        }
+        #start-title {
+            font-size: 3rem;
+            color: white;
+            text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        .start-button {
+            background: linear-gradient(45deg, #FF5252, #FF9800);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .start-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Estilos da Tela de Configurações */
+        .settings-option {
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+            max-width: 400px;
+        }
+        .settings-option label {
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            color: #FFF;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .color-palettes {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .color-swatch {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid rgba(255,255,255,0.7);
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .color-swatch:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 15px rgba(255,255,255,0.8);
+        }
+        .color-swatch.selected {
+            border: 3px solid #4CAF50;
+            box-shadow: 0 0 10px #4CAF50;
+            transform: scale(1.15);
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 10px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        #sensitivity-value {
+            font-size: 1.1em;
+            margin-top: 5px;
+        }
+        .pause-buttons, .version-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        /* SPLASH SCREEN */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(100,200,255,0.8), rgba(0,100,200,0.9));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            font-size: 2em;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: opacity 1s ease-out;
+            opacity: 1;
+        }
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #splash-screen img {
+            width: 100px;
+            height: 100px;
+            animation: spin 1.5s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para a tela de seleção de versão */
+        #version-select-screen h1 {
+            color: #fff;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .version-button {
+            background: linear-gradient(45deg, #4285F4, #34A853);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.5rem;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 200px;
+        }
+        .version-button:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        }
+        #diamond-button {
+            background: linear-gradient(45deg, #00BCD4, #00C853);
+        }
+    </style>
+</head>
+<body>
+    <div id="splash-screen">
+        <img src="https://em-content.zobj.net/source/apple/354/umbrella_2602-fe0f.png" alt="Carregando..."> <p>Carregando Jogo...</p>
+    </div>
+
+    <div id="ui">
+        ☂️ <span id="score">0</span> | ❤️ <span id="lives">5</span> | 🏆 <span id="highscore">0</span>
+    </div>
+    <div id="level-indicator">Nível: Céu<br>Próximo: 1000 pontos</div>
+    <button id="pause-btn">Pausar</button>
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="start-screen">
+        <h1 id="start-title">Space Balloon</h1>
+        <button class="start-button" id="start-button">Jogar</button>
+        <button class="start-button" id="settings-button">⚙️ Configurações</button>
+        <a href="https://kusuncod.github.io/CadzinB/" target="_blank" class="start-button">Visite meu Site!</a>
+        <button class="start-button" id="versions-button">Todas as Versões</button>
+    </div>
+
+    <div id="game-over">
+        <h1>FIM DE JOGO</h1>
+        <p id="final-score">Pontuação: 0</p>
+        <p id="final-level">Nível alcançado: Céu</p>
+        <button id="restart-btn">Jogar Novamente</button>
+    </div>
+
+    <div id="game-win">
+        <h1>PARABÉNS! VOCÊ VENCEU!</h1>
+        <p id="final-score-win">Pontuação Final: 0</p>
+        <button id="play-again-win-btn">Jogar Novamente</button>
+    </div>
+
+    <div id="pause-screen">
+        <h1>PAUSADO</h1>
+        <div class="pause-buttons">
+            <button id="resume-btn">Continuar Jogo</button>
+            <button id="back-to-start-btn" class="game-button">Tela Inicial</button>
+        </div>
+    </div>
+
+    <div id="settings-screen">
+        <h1>⚙️ Configurações</h1>
+        <div class="settings-option">
+            <label for="background-color-selector">Cor de Fundo Padrão:</label>
+            <div class="color-palettes">
+                <div class="color-swatch selected" data-color="default" style="background: linear-gradient(to bottom, #87CEEB, #B0E0E6);"></div>
+                <div class="color-swatch" data-color="dark" style="background: linear-gradient(to bottom, #2c3e50, #34495e);"></div>
+                <div class="color-swatch" data-color="sunset" style="background: linear-gradient(to bottom, #fdc830, #f37335);"></div>
+                <div class="color-swatch" data-color="forest" style="background: linear-gradient(to bottom, #4CAF50, #8BC34A);"></div>
+            </div>
+        </div>
+        <div class="settings-option">
+            <label for="touch-sensitivity">Sensibilidade ao Toque:</label>
+            <input type="range" id="touch-sensitivity" min="0.5" max="2.0" step="0.1" value="1.0">
+            <span id="sensitivity-value">1.0</span>
+        </div>
+        <button id="settings-back-btn" class="game-button">Voltar</button>
+    </div>
+
+    <div id="version-select-screen">
+        <h1>Selecione a Versão</h1>
+        <div class="version-buttons">
+            <button class="version-button" id="silver-button">Prata</button>
+            <button class="version-button" id="gold-button">Ouro</button>
+            <button class="version-button" id="emerald-button">Esmeralda</button>
+            <button class="version-button" id="diamond-button">Diamond</button>
+        </div>
+        <button id="version-back-btn" class="game-button">Voltar</button>
+    </div>
+
+    <script>
+        // ===== CONFIGURAÇÕES GERAIS =====
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const levelElement = document.getElementById('level-indicator');
+        const uiElement = document.getElementById('ui');
+        const highscoreElement = document.getElementById('highscore');
+
+        // Elementos da UI
+        const splashScreen = document.getElementById('splash-screen');
+        const startScreen = document.getElementById('start-screen');
+        const startButton = document.getElementById('start-button');
+        const settingsButton = document.getElementById('settings-button');
+        const settingsScreen = document.getElementById('settings-screen');
+        const settingsBackBtn = document.getElementById('settings-back-btn');
+        const colorSwatches = document.querySelectorAll('.color-swatch');
+        const touchSensitivitySlider = document.getElementById('touch-sensitivity');
+        const sensitivityValueSpan = document.getElementById('sensitivity-value');
+        const versionsButton = document.getElementById('versions-button');
+        const versionSelectScreen = document.getElementById('version-select-screen');
+        const silverButton = document.getElementById('silver-button');
+        const goldButton = document.getElementById('gold-button');
+        const emeraldButton = document.getElementById('emerald-button');
+        const diamondButton = document.getElementById('diamond-button');
+        const versionBackBtn = document.getElementById('version-back-btn');
+        const gameOverScreen = document.getElementById('game-over');
+        const gameWinScreen = document.getElementById('game-win');
+        const pauseScreen = document.getElementById('pause-screen');
+        const finalScoreElement = document.getElementById('final-score');
+        const finalLevelElement = document.getElementById('final-level');
+        const finalScoreWinElement = document.getElementById('final-score-win');
+        const restartBtn = document.getElementById('restart-btn');
+        const playAgainWinBtn = document.getElementById('play-again-win-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resumeBtn = document.getElementById('resume-btn');
+        const backToStartBtn = document.getElementById('back-to-start-btn');
+
+        // Variáveis de estado do jogo
+        let score = 0;
+        let lives = 5;
+        let currentLevelIndex = 0;
+        let transitionActive = false;
+        let transitionProgress = 0;
+        let highscore = localStorage.getItem('highscore') || 0;
+        let lastTime = 0;
+        const targetFps = 60;
+        const frameInterval = 1000 / targetFps;
+        let gameActive = false;
+        let isPaused = false;
+        let gameLoopRAF;
+        let floatingTexts = [];
+        let touchSensitivity = parseFloat(localStorage.getItem('touchSensitivity')) || 1.0;
+        let currentBackgroundPreset = localStorage.getItem('backgroundPreset')) || 'default';
+
+        // ===== SISTEMA DE SONS =====
+        class SoundSystem {
+            constructor() {
+                this.sounds = {
+                    click: { file: "clique.mp3", volume: 0.7 },
+                    gameOver: { file: "gameover.mp3", volume: 0.7 },
+                    background: { file: "musica.mp3", volume: 0.5, loop: true },
+                    levelUp: { file: "nivel.mp3", volume: 0.8 },
+                    menu: { file: "telainicio.mp3", volume: 0.4, loop: true },
+                    life: { file: "vida.mp3", volume: 0.6 }
+                };
+                this.audioElements = {};
+                this.isAudioEnabled = false;
+                this.isMuted = false;
+            }
+
+            preload() {
+                for (const [key, config] of Object.entries(this.sounds)) {
+                    const audio = new Audio(config.file);
+                    audio.volume = config.volume;
+                    audio.loop = config.loop || false;
+                    this.audioElements[key] = audio;
+                }
+            }
+
+            play(key) {
+                if (!this.isAudioEnabled || this.isMuted) return;
+                
+                try {
+                    const audio = this.audioElements[key];
+                    if (audio) {
+                        audio.currentTime = 0;
+                        audio.play().catch(e => console.warn(`Audio ${key} não pôde tocar:`, e));
+                    }
+                } catch (e) {
+                    console.error(`Erro ao tocar ${key}:`, e);
+                }
+            }
+
+            stop(key) {
+                const audio = this.audioElements[key];
+                if (audio) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+            }
+
+            enable() {
+                this.isAudioEnabled = true;
+                this.play("menu");
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                for (const audio of Object.values(this.audioElements)) {
+                    audio.muted = this.isMuted;
+                }
+                return this.isMuted;
+            }
+        }
+
+        const soundSystem = new SoundSystem();
+        soundSystem.preload();
+
+        // ===== SISTEMA DE PARTÍCULAS =====
+        let currentUmbrellas = [];
+        let currentParticles = [];
+
+        // ===== ELEMENTOS DE FUNDO =====
+        let clouds = [], cacti = [], dunes = [], stars = [], nebulas = [], icebergs = [], snowflakes = [], waterBubbles = [];
+
+        // ===== NÍVEIS DO JOGO =====
+        const levels = [
+            {
+                name: "Céu",
+                umbrellaColors: ['#FF5252', '#4285F4', '#FBBC05', '#34A853'],
+                spawnRate: 0.015,
+                baseSpeed: 2,
+                scoreValue: 20,
+                nextLevelScore: 1000
+            },
+            {
+                name: "Deserto",
+                umbrellaColors: ['#A0522D', '#D2B48C', '#F4A460', '#BDB76B'],
+                spawnRate: 0.02,
+                baseSpeed: 3,
+                scoreValue: 50,
+                nextLevelScore: 5000
+            },
+            {
+                name: "Oceano",
+                umbrellaColors: ['#00BFFF', '#1E90FF', '#4169E1', '#4682B4'],
+                spawnRate: 0.025,
+                baseSpeed: 4,
+                scoreValue: 100,
+                nextLevelScore: 20000
+            },
+            {
+                name: "Gelo",
+                umbrellaColors: ['#FFFFFF', '#ADD8E6', '#87CEEB', '#B0E0E6'],
+                spawnRate: 0.03,
+                baseSpeed: 5,
+                scoreValue: 120,
+                nextLevelScore: 40000
+            },
+            {
+                name: "Espaço",
+                umbrellaColors: ['#ff00ff', '#00ffff', '#ffff00', '#ff00ff'],
+                spawnRate: 0.035,
+                baseSpeed: 6,
+                scoreValue: 150,
+                nextLevelScore: 100000
+            }
+        ];
+
+        const backgroundPresets = {
+            'default': "linear-gradient(to bottom, #87CEEB, #B0E0E6)",
+            'dark': "linear-gradient(to bottom, #2c3e50, #34495e)",
+            'sunset': "linear-gradient(to bottom, #fdc830, #f37335)",
+            'forest': "linear-gradient(to bottom, #4CAF50, #8BC34A)"
+        };
+
+        // ===== FUNÇÕES DO JOGO =====
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (gameActive && !isPaused) {
+                initializeLevelElements();
+            }
+        }
+
+        function applyGameBackground() {
+            const currentLevelData = levels[currentLevelIndex];
+            if (currentLevelData.name.includes('Espaço')) {
+                uiElement.style.textShadow = '0 0 10px #00ffff, 0 0 20px #ff00ff';
+            } else {
+                uiElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+            }
+        }
+
+        function applyMenuBackground() {
+            document.body.style.background = backgroundPresets[currentBackgroundPreset] || backgroundPresets['default'];
+        }
+
+        function initializeLevelElements() {
+            clouds = []; cacti = []; dunes = []; stars = []; nebulas = []; icebergs = []; snowflakes = []; waterBubbles = [];
+
+            const levelData = levels[currentLevelIndex];
+            if (levelData.name.includes('Céu')) {
+                clouds = Array.from({ length: 5 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.4,
+                    speed: 0.2 + Math.random() * 0.3,
+                    size: 50 + Math.random() * 70,
+                    opacity: 0.7 + Math.random() * 0.3
+                }));
+            } else if (levelData.name.includes('Deserto')) {
+                cacti = Array.from({ length: 10 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height - (30 + Math.random() * 70),
+                    height: 30 + Math.random() * 70
+                }));
+                dunes = Array.from({ length: 3 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height - (30 + Math.random() * 50),
+                    width: 150 + Math.random() * 200,
+                    height: 30 + Math.random() * 50,
+                    color: `rgba(${255 - Math.random() * 50}, ${215 - Math.random() * 50}, ${0}, 0.8)`
+                }));
+            } else if (levelData.name.includes('Oceano')) {
+                waterBubbles = Array.from({ length: 30 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height + Math.random() * 100,
+                    size: 5 + Math.random() * 15,
+                    speed: 1 + Math.random() * 2,
+                    opacity: 0.4 + Math.random() * 0.6
+                }));
+            } else if (levelData.name.includes('Gelo')) {
+                icebergs = Array.from({ length: 5 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height * 0.8 + Math.random() * canvas.height * 0.2,
+                    size: 80 + Math.random() * 100,
+                    opacity: 0.6 + Math.random() * 0.4
+                }));
+                snowflakes = Array.from({ length: 50 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: 2 + Math.random() * 3,
+                    speedY: 0.5 + Math.random() * 1,
+                    speedX: (Math.random() - 0.5) * 0.5,
+                    opacity: 0.6 + Math.random() * 0.4
+                }));
+            } else if (levelData.name.includes('Espaço')) {
+                stars = Array.from({ length: 200 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    opacity: Math.random(),
+                    speed: Math.random() * 0.2
+                }));
+                nebulas = Array.from({ length: 3 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.5,
+                    radius: 100 + Math.random() * 200,
+                    color: `hsla(${Math.random() * 360}, 80%, 60%, 0.1)`,
+                    speed: Math.random() * 0.1 - 0.05
+                }));
+            }
+        }
+
+        function createUmbrella() {
+            const levelData = levels[currentLevelIndex];
+            const color = levelData.umbrellaColors[Math.floor(Math.random() * levelData.umbrellaColors.length)];
+            const speed = levelData.baseSpeed + (score / 20000);
+
+            currentUmbrellas.push({
+                x: Math.random() * (canvas.width - 100),
+                y: -120,
+                speed: speed,
+                color: color,
+                width: 100,
+                height: 120,
+            });
+        }
+
+        function drawUmbrella(u) {
+            const centerX = u.x + u.width / 2;
+            const canopyTopY = u.y;
+            const canopyBottomY = u.y + u.height * 0.5;
+            const handleStartY = canopyBottomY - 10;
+            const handleLength = u.height * 0.5;
+            const handleThickness = 5;
+            const handleColor = '#654321';
+            const tipRadius = 8;
+
+            ctx.fillStyle = handleColor;
+            ctx.fillRect(centerX - handleThickness / 2, handleStartY, handleThickness, handleLength);
+
+            ctx.beginPath();
+            ctx.arc(centerX + tipRadius, handleStartY + handleLength, tipRadius, Math.PI, Math.PI * 1.5, false);
+            ctx.lineTo(centerX - tipRadius, handleStartY + handleLength + tipRadius);
+            ctx.arc(centerX - tipRadius, handleStartY + handleLength, tipRadius, Math.PI * 1.5, Math.PI * 2, false);
+            ctx.fill();
+
+            const segments = 8;
+            const radius = u.width / 2;
+
+            ctx.lineWidth = 2;
+            const strokeColor = darkenColor(u.color, 40);
+
+            for (let i = 0; i < segments; i++) {
+                ctx.beginPath();
+                ctx.moveTo(centerX, canopyTopY);
+
+                const angle1 = (i / segments) * Math.PI;
+                const angle2 = ((i + 1) / segments) * Math.PI;
+
+                const x1 = centerX - radius * Math.cos(angle1);
+                const y1 = canopyBottomY;
+                const x2 = centerX - radius * Math.cos(angle2);
+                const y2 = canopyBottomY;
+
+                ctx.lineTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.closePath();
+                ctx.fillStyle = u.color;
+                ctx.fill();
+                ctx.strokeStyle = strokeColor;
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = darkenColor(u.color, 60);
+            ctx.beginPath();
+            ctx.arc(centerX, canopyTopY, 5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function darkenColor(hex, percent) {
+            if (!hex || hex.length < 7) return '#000000';
+            const f = parseInt(hex.slice(1), 16);
+            const R = (f >> 16) * (1 - percent / 100);
+            const G = ((f >> 8) & 0x00FF) * (1 - percent / 100);
+            const B = (f & 0x0000FF) * (1 - percent / 100);
+            return "#" + (0x1000000 + (R << 16) + (G << 8) + B).toString(16).slice(1);
+        }
+
+        function updateAndDrawBackgroundElements() {
+            const levelData = levels[currentLevelIndex];
+            if (levelData.name.includes('Céu')) {
+                clouds.forEach(cloud => {
+                    cloud.x += cloud.speed;
+                    if (cloud.x > canvas.width + cloud.size) cloud.x = -cloud.size;
+                    drawCloud(cloud.x, cloud.y, cloud.size, cloud.opacity);
+                });
+            } else if (levelData.name.includes('Deserto')) {
+                dunes.forEach(dune => {
+                    drawDune(dune.x, dune.y, dune.width, dune.height, dune.color);
+                });
+                cacti.forEach(cactus => {
+                    drawCactus(cactus.x, cactus.y, cactus.height);
+                });
+            } else if (levelData.name.includes('Oceano')) {
+                drawWaterBubbles();
+            } else if (levelData.name.includes('Gelo')) {
+                icebergs.forEach(iceberg => {
+                    drawIceberg(iceberg.x, iceberg.y, iceberg.size, iceberg.opacity);
+                });
+                snowflakes.forEach(flake => {
+                    drawSnowflake(flake.x, flake.y, flake.size, flake.opacity);
+                    flake.y += flake.speedY;
+                    flake.x += flake.speedX;
+                    if (flake.y > canvas.height) flake.y = -flake.size;
+                });
+            } else if (levelData.name.includes('Espaço')) {
+                drawStars();
+                drawNebulas();
+            }
+            drawVignette();
+        }
+
+        function drawVignette() {
+            const gradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.3,
+                canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.8
+            );
+            gradient.addColorStop(0, 'rgba(0,0,0,0)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0.4)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function drawCloud(x, y, size, opacity) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size * 0.6, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.4, y - size * 0.2, size * 0.4, 0, Math.PI * 2);
+            ctx.arc(x + size * 0.8, y, size * 0.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawCactus(x, y, height) {
+            ctx.fillStyle = '#228B22';
+            ctx.fillRect(x, y, 15, height);
+            ctx.fillRect(x - 10, y + height * 0.3, 15, height * 0.2);
+            ctx.fillRect(x + 10, y + height * 0.6, 15, height * 0.2);
+        }
+
+        function drawDune(x, y, width, height, color) {
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(x + width / 2, y + height, width / 2, 0, Math.PI, true);
+            ctx.lineTo(x, y + height);
+            ctx.lineTo(x, y + height * 0.5);
+            ctx.lineTo(x + width, y + height * 0.5);
+            ctx.lineTo(x + width, y + height);
+            ctx.fill();
+        }
+
+        function drawStars() {
+            stars.forEach(star => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fillRect(star.x, star.y, star.size, star.size);
+                star.y += star.speed;
+                if (star.y > canvas.height) star.y = 0;
+            });
+        }
+
+        function drawNebulas() {
+            nebulas.forEach(nebula => {
+                const gradient = ctx.createRadialGradient(
+                    nebula.x, nebula.y, 0,
+                    nebula.x, nebula.y, nebula.radius
+                );
+                gradient.addColorStop(0, nebula.color);
+                gradient.addColorStop(1, 'transparent');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(nebula.x, nebula.y, nebula.radius, 0, Math.PI * 2);
+                ctx.fill();
+                nebula.x += nebula.speed;
+                if (nebula.x < -nebula.radius) nebula.x = canvas.width + nebula.radius;
+            });
+        }
+
+        function drawIceberg(x, y, size, opacity) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            ctx.beginPath();
+            ctx.moveTo(x, y);
+            ctx.lineTo(x + size, y);
+            ctx.lineTo(x + size * 0.8, y - size * 0.6);
+            ctx.lineTo(x + size * 0.2, y - size * 0.8);
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawSnowflake(x, y, size, opacity) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            ctx.beginPath();
+            ctx.arc(x, y, size, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawWaterBubbles() {
+            waterBubbles.forEach(bubble => {
+                ctx.fillStyle = `rgba(173, 216, 230, ${bubble.opacity})`;
+                ctx.beginPath();
+                ctx.arc(bubble.x, bubble.y, bubble.size, 0, Math.PI * 2);
+                ctx.fill();
+                bubble.y -= bubble.speed;
+                if (bubble.y < -bubble.size) {
+                    bubble.y = canvas.height + Math.random() * 100;
+                    bubble.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+        function checkLevelTransition() {
+            const currentLevelData = levels[currentLevelIndex];
+            if (score >= currentLevelData.nextLevelScore && currentLevelIndex < levels.length - 1 && !transitionActive) {
+                startTransition(currentLevelIndex + 1);
+            }
+            else if (score >= currentLevelData.nextLevelScore && currentLevelIndex === levels.length - 1 && !transitionActive) {
+                endGame(true);
+            }
+        }
+
+        function startTransition(newLevelIndex) {
+            transitionActive = true;
+            gameActive = false;
+            cancelAnimationFrame(gameLoopRAF);
+            const newLevelData = levels[newLevelIndex];
+
+            levelElement.innerHTML = `Transição para o ${newLevelData.name}!`;
+            soundSystem.play("levelUp");
+
+            setTimeout(() => {
+                completeTransition(newLevelIndex);
+                gameLoopRAF = requestAnimationFrame(gameLoop);
+            }, 2000);
+        }
+
+        function completeTransition(newLevelIndex) {
+            currentLevelIndex = newLevelIndex;
+            transitionActive = false;
+            transitionProgress = 0;
+            gameActive = true;
+
+            const currentLevelData = levels[currentLevelIndex];
+            levelElement.innerHTML = `Nível: ${currentLevelData.name}<br>Próximo: ${currentLevelData.nextLevelScore} pontos`;
+
+            currentUmbrellas = [];
+            currentParticles = [];
+            floatingTexts = [];
+            initializeLevelElements();
+        }
+
+        function endGame(win) {
+            gameActive = false;
+            isPaused = true;
+            cancelAnimationFrame(gameLoopRAF);
+            soundSystem.stop("background");
+
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('highscore', highscore);
+            }
+            highscoreElement.textContent = highscore;
+
+            if (win) {
+                finalScoreWinElement.textContent = `Pontuação Final: ${score}`;
+                gameWinScreen.style.display = 'flex';
+                setTimeout(() => gameWinScreen.classList.add('active'), 10);
+                pauseBtn.style.display = 'none';
+            } else {
+                soundSystem.play("gameOver");
+                finalScoreElement.textContent = `Pontuação: ${score}`;
+                finalLevelElement.textContent = `Nível alcançado: ${levels[currentLevelIndex].name}`;
+                gameOverScreen.style.display = 'flex';
+                setTimeout(() => gameOverScreen.classList.add('active'), 10);
+                pauseBtn.style.display = 'none';
+            }
+            canvas.style.display = 'none';
+            applyMenuBackground();
+        }
+
+        function resetGame() {
+            score = 0;
+            lives = 5;
+            currentLevelIndex = 0;
+            transitionActive = false;
+            transitionProgress = 0;
+            gameActive = true;
+            isPaused = false;
+
+            currentUmbrellas = [];
+            currentParticles = [];
+            floatingTexts = [];
+            initializeLevelElements();
+
+            gameOverScreen.classList.remove('active');
+            gameWinScreen.classList.remove('active');
+            pauseScreen.classList.remove('active');
+            startScreen.classList.remove('active');
+            settingsScreen.classList.remove('active');
+            versionSelectScreen.classList.remove('active');
+
+            uiElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            levelElement.innerHTML = `Nível: ${levels[0].name}<br>Próximo: ${levels[0].nextLevelScore} pontos`;
+            highscoreElement.textContent = highscore;
+
+            gameOverScreen.style.display = 'none';
+            gameWinScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            startScreen.style.display = 'none';
+            settingsScreen.style.display = 'none';
+            versionSelectScreen.style.display = 'none';
+            canvas.style.display = 'block';
+            pauseBtn.style.display = 'block';
+
+            soundSystem.play("background");
+
+            if (gameLoopRAF) cancelAnimationFrame(gameLoopRAF);
+            gameLoopRAF = requestAnimationFrame(gameLoop);
+        }
+
+        function returnToStartScreen() {
+            gameActive = false;
+            isPaused = true;
+            cancelAnimationFrame(gameLoopRAF);
+            soundSystem.stop("background");
+
+            gameOverScreen.classList.remove('active');
+            gameWinScreen.classList.remove('active');
+            pauseScreen.classList.remove('active');
+            settingsScreen.classList.remove('active');
+            versionSelectScreen.classList.remove('active');
+
+            gameOverScreen.style.display = 'none';
+            gameWinScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            canvas.style.display = 'none';
+            pauseBtn.style.display = 'none';
+
+            startScreen.style.display = 'flex';
+            setTimeout(() => startScreen.classList.add('active'), 10);
+            applyMenuBackground();
+            soundSystem.play("menu");
+        }
+
+        function togglePause() {
+            soundSystem.play("click");
+            isPaused = !isPaused;
+            if (isPaused) {
+                cancelAnimationFrame(gameLoopRAF);
+                soundSystem.stop("background");
+                pauseScreen.style.display = 'flex';
+                setTimeout(() => pauseScreen.classList.add('active'), 10);
+                pauseBtn.textContent = 'Retomar';
+                applyMenuBackground();
+            } else {
+                gameLoopRAF = requestAnimationFrame(gameLoop);
+                soundSystem.play("background");
+                pauseScreen.classList.remove('active');
+                pauseScreen.addEventListener('transitionend', function handler() {
+                    pauseScreen.style.display = 'none';
+                    pauseScreen.removeEventListener('transitionend', handler);
+                });
+                pauseBtn.textContent = 'Pausar';
+            }
+        }
+
+        function isClickInsideUmbrella(x, y, u) {
+            const hitZoneModifier = (1 - touchSensitivity) * 30;
+            const effectiveX = u.x - hitZoneModifier / 2;
+            const effectiveY = u.y - hitZoneModifier / 2;
+            const effectiveWidth = u.width + hitZoneModifier;
+            const effectiveHeight = u.height + hitZoneModifier;
+
+            return (
+                x >= effectiveX && x <= effectiveX + effectiveWidth &&
+                y >= effectiveY && y <= effectiveY + effectiveHeight
+            );
+        }
+
+        function handleClick(x, y) {
+            if (!gameActive || transitionActive || isPaused) return;
+
+            const levelData = levels[currentLevelIndex];
+
+            for (let i = currentUmbrellas.length - 1; i >= 0; i--) {
+                const u = currentUmbrellas[i];
+                if (isClickInsideUmbrella(x, y, u)) {
+                    soundSystem.play("click");
+                    if (navigator.vibrate) navigator.vibrate(50);
+
+                    score += levelData.scoreValue;
+                    scoreElement.textContent = score;
+
+                    createFloatingText(`+${levelData.scoreValue}`, u.x + u.width / 2, u.y + u.height / 2);
+
+                    let particleColor = u.color;
+                    if (levelData.name.includes('Deserto')) particleColor = '#FFD700';
+                    else if (levelData.name.includes('Gelo')) particleColor = '#F0F8FF';
+                    else if (levelData.name.includes('Espaço')) particleColor = '#00ffff';
+
+                    createParticles(u.x + u.width/2, u.y + u.height/2, particleColor, 25);
+
+                    currentUmbrellas.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        function createParticles(x, y, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 4;
+
+                currentParticles.push({
+                    x: x,
+                    y: y,
+                    radius: 3 + Math.random() * 5,
+                    color: color,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2,
+                    life: 50 + Math.random() * 50
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = currentParticles.length - 1; i >= 0; i--) {
+                const p = currentParticles[i];
+
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.05;
+                p.life--;
+
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 100;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+
+                if (p.life <= 0) {
+                    currentParticles.splice(i, 1);
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function createFloatingText(text, x, y) {
+            floatingTexts.push({
+                text: text,
+                x: x,
+                y: y,
+                alpha: 1.0,
+                vy: -1,
+                life: 60
+            });
+        }
+
+        function updateFloatingTexts() {
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const textObj = floatingTexts[i];
+                textObj.y += textObj.vy;
+                textObj.alpha -= 1.0 / textObj.life;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, textObj.alpha);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 5;
+                ctx.fillText(textObj.text, textObj.x, textObj.y);
+                ctx.restore();
+
+                textObj.life--;
+                if (textObj.life <= 0) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+        }
+
+        function gameLoop(timestamp) {
+            gameLoopRAF = requestAnimationFrame(gameLoop);
+
+            if (!gameActive || isPaused) return;
+
+            const deltaTime = timestamp - lastTime;
+            if (deltaTime < frameInterval) return;
+            lastTime = timestamp - (deltaTime % frameInterval);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            updateAndDrawBackgroundElements();
+            checkLevelTransition();
+
+            if (transitionActive) {
+                drawTransition();
+            } else {
+                const levelData = levels[currentLevelIndex];
+                if (Math.random() < levelData.spawnRate + (score / 300000)) {
+                    createUmbrella();
+                }
+
+                for (let i = currentUmbrellas.length - 1; i >= 0; i--) {
+                    const u = currentUmbrellas[i];
+                    u.y += u.speed;
+                    drawUmbrella(u);
+
+                    if (u.y > canvas.height + u.height) {
+                        currentUmbrellas.splice(i, 1);
+                        lives--;
+                        soundSystem.play("life");
+                        livesElement.textContent = lives;
+                        if (lives <= 0) {
+                            endGame(false);
+                            return;
+                        }
+                    }
+                }
+            }
+
+            updateParticles();
+            updateFloatingTexts();
+            scoreElement.textContent = score;
+        }
+
+        // ===== EVENT LISTENERS =====
+        function getTouchPos(canvasDom, touchEvent) {
+            const rect = canvasDom.getBoundingClientRect();
+            return {
+                x: touchEvent.touches[0].clientX - rect.left,
+                y: touchEvent.touches[0].clientY - rect.top
+            };
+        }
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            handleClick(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touchPos = getTouchPos(canvas, e);
+            handleClick(touchPos.x, touchPos.y);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        restartBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            resetGame();
+        });
+
+        playAgainWinBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            resetGame();
+        });
+
+        pauseBtn.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+        backToStartBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            returnToStartScreen();
+        });
+
+        startButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            soundSystem.stop("menu");
+
+            startScreen.classList.remove('active');
+            startScreen.addEventListener('transitionend', function handler() {
+                startScreen.style.display = 'none';
+                startScreen.removeEventListener('transitionend', handler);
+                resetGame();
+            });
+        });
+
+        settingsButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            soundSystem.stop("menu");
+
+            startScreen.classList.remove('active');
+            startScreen.addEventListener('transitionend', function handler() {
+                startScreen.style.display = 'none';
+                startScreen.removeEventListener('transitionend', handler);
+                settingsScreen.style.display = 'flex';
+                setTimeout(() => settingsScreen.classList.add('active'), 10);
+                applyMenuBackground();
+                updateSettingsUI();
+            });
+        });
+
+        settingsBackBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            settingsScreen.classList.remove('active');
+            settingsScreen.addEventListener('transitionend', function handler() {
+                settingsScreen.style.display = 'none';
+                settingsScreen.removeEventListener('transitionend', handler);
+                startScreen.style.display = 'flex';
+                setTimeout(() => startScreen.classList.add('active'), 10);
+                applyMenuBackground();
+                soundSystem.play("menu");
+            });
+        });
+
+        versionsButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            soundSystem.stop("menu");
+
+            startScreen.classList.remove('active');
+            startScreen.addEventListener('transitionend', function handler() {
+                startScreen.style.display = 'none';
+                startScreen.removeEventListener('transitionend', handler);
+                versionSelectScreen.style.display = 'flex';
+                setTimeout(() => versionSelectScreen.classList.add('active'), 10);
+                applyMenuBackground();
+            });
+        });
+
+        versionBackBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            versionSelectScreen.classList.remove('active');
+            versionSelectScreen.addEventListener('transitionend', function handler() {
+                versionSelectScreen.style.display = 'none';
+                versionSelectScreen.removeEventListener('transitionend', handler);
+                startScreen.style.display = 'flex';
+                setTimeout(() => startScreen.classList.add('active'), 10);
+                applyMenuBackground();
+                soundSystem.play("menu");
+            });
+        });
+
+        silverButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            alert('Você clicou em Prata! (Esta versão não está implementada neste arquivo)');
+        });
+
+        goldButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            alert('Você clicou em Ouro! (Esta versão não está implementada neste arquivo)');
+        });
+
+        emeraldButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            alert('Você clicou em Esmeralda! (Esta versão não está implementada neste arquivo)');
+        });
+
+        diamondButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            window.location.href = 'index2.html';
+        });
+
+        // ===== CONFIGURAÇÕES =====
+        function updateSettingsUI() {
+            touchSensitivitySlider.value = touchSensitivity;
+            sensitivityValueSpan.textContent = touchSensitivity.toFixed(1);
+            updateColorSwatchSelection();
+        }
+
+        function updateColorSwatchSelection() {
+            colorSwatches.forEach(swatch => {
+                swatch.classList.remove('selected');
+                if (swatch.dataset.color === currentBackgroundPreset) {
+                    swatch.classList.add('selected');
+                }
+            });
+        }
+
+        colorSwatches.forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                soundSystem.play("click");
+                const colorPreset = swatch.dataset.color;
+                currentBackgroundPreset = colorPreset;
+                localStorage.setItem('backgroundPreset', currentBackgroundPreset);
+                applyMenuBackground();
+                updateColorSwatchSelection();
+            });
+        });
+
+        touchSensitivitySlider.addEventListener('input', (e) => {
+            touchSensitivity = parseFloat(e.target.value);
+            localStorage.setItem('touchSensitivity', touchSensitivity);
+            sensitivityValueSpan.textContent = touchSensitivity.toFixed(1);
+        });
+
+        // ===== INICIALIZAÇÃO =====
+        function initGameOnLoad() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            highscoreElement.textContent = highscore;
+            pauseBtn.style.display = 'none';
+            applyMenuBackground();
+            updateSettingsUI();
+            
+            soundSystem.enable();
+            soundSystem.play("menu");
+
+            setTimeout(() => {
+                splashScreen.classList.add('hidden');
+                splashScreen.addEventListener('transitionend', function handler() {
+                    splashScreen.style.display = 'none';
+                    startScreen.style.display = 'flex';
+                    setTimeout(() => startScreen.classList.add('active'), 10);
+                    splashScreen.removeEventListener('transitionend', handler);
+                });
+            }, 1500);
+        }
+
+        window.addEventListener('load', initGameOnLoad);
+    </script>
+</body>
+</html>
