@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking dos Heróis - Space Balloon</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #2c3e50; /* Fundo escuro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Press Start 2P', cursive; /* Fonte estilo pixel */
+            color: #ecf0f1; /* Cor do texto claro */
+            text-shadow: 2px 2px #000; /* Sombra para efeito pixel */
+            touch-action: manipulation; /* Melhora a responsividade em telas sensíveis ao toque */
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            image-rendering: pixelated; /* Garante que os gráficos sejam pixelados */
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+
+        .container {
+            background-color: #34495e; /* Fundo do container */
+            border: 4px solid #f39c12; /* Borda laranja pixel */
+            padding: 25px;
+            border-radius: 8px; /* Cantos levemente arredondados, mas ainda com aspecto pixel */
+            box-shadow: 8px 8px #22313f; /* Sombra para profundidade pixelada */
+            text-align: center;
+            width: 90%;
+            max-width: 550px; /* Reduzido um pouco para melhor encaixe em celulares */
+            box-sizing: border-box;
+            max-height: 95vh; /* Limita a altura para evitar scroll excessivo */
+            overflow-y: auto; /* Adiciona scroll se o conteúdo for muito grande */
+        }
+
+        h1 {
+            color: #f1c40f; /* Amarelo vibrante */
+            margin-bottom: 25px;
+            font-size: 1.8em; /* Ajustado para celulares */
+            text-transform: uppercase;
+        }
+
+        .ranking-list {
+            background-color: #2c3e50;
+            border: 2px solid #3498db; /* Borda azul */
+            padding: 15px;
+            margin-bottom: 25px;
+            border-radius: 4px;
+        }
+
+        .ranking-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0; /* Padding reduzido */
+            border-bottom: 1px dashed #7f8c8d; /* Linha tracejada */
+            font-size: 0.9em; /* Tamanho da fonte reduzido */
+        }
+
+        .ranking-item:last-child {
+            border-bottom: none;
+        }
+
+        .position {
+            color: #9b59b6; /* Roxo */
+            font-weight: bold;
+            width: 15%;
+            text-align: left;
+        }
+
+        .name {
+            color: #ecf0f1;
+            width: 50%; /* Ajustado */
+            text-align: left;
+            overflow: hidden; /* Evita que nomes muito longos quebrem o layout */
+            white-space: nowrap;
+            text-overflow: ellipsis; /* Adiciona "..." se o nome for muito longo */
+        }
+
+        .score {
+            color: #2ecc71; /* Verde */
+            font-weight: bold;
+            width: 35%; /* Ajustado */
+            text-align: right;
+        }
+
+        .back-button {
+            background-color: #e74c3c; /* Vermelho */
+            color: white;
+            padding: 12px 20px; /* Padding ajustado */
+            border: 3px solid #c0392b; /* Borda mais escura */
+            border-radius: 5px;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.9em; /* Tamanho da fonte ajustado */
+            cursor: pointer;
+            text-transform: uppercase;
+            box-shadow: 4px 4px #a93226; /* Sombra do botão */
+            transition: all 0.1s ease;
+            -webkit-appearance: none; /* Remove estilos padrão do botão em navegadores webkit */
+            -moz-appearance: none;
+            appearance: none;
+        }
+
+        .back-button:hover {
+            background-color: #c0392b;
+            box-shadow: 2px 2px #8e241c;
+            transform: translate(2px, 2px);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏆 Ranking dos Heróis 🏆</h1>
+        <div class="ranking-list">
+            <div class="ranking-item">
+                <span class="position">1º</span>
+                <span class="name">PixelMaster</span>
+                <span class="score">15000 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">2º</span>
+                <span class="name">GamerGirl8bit</span>
+                <span class="score">12500 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">3º</span>
+                <span class="name">RetroKing</span>
+                <span class="score">10000 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">4º</span>
+                <span class="name">SpriteWarrior</span>
+                <span class="score">8000 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">5º</span>
+                <span class="name">ArcadeAce</span>
+                <span class="score">6500 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">6º</span>
+                <span class="name">BugHunter</span>
+                <span class="score">5000 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">7º</span>
+                <span class="name">CodeNinja</span>
+                <span class="score">4500 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">8º</span>
+                <span class="name">JoyfulCoder</span>
+                <span class="score">3800 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">9º</span>
+                <span class="name">DataScout</span>
+                <span class="score">3200 pts</span>
+            </div>
+            <div class="ranking-item">
+                <span class="position">10º</span>
+                <span class="name">WebWizard</span>
+                <span class="score">2800 pts</span>
+            </div>
+        </div>
+        <button class="back-button" id="backToGameMenu">Voltar ao Jogo</button>
+    </div>
+
+    <script>
+        document.getElementById('backToGameMenu').addEventListener('click', function() {
+            // Este é o mesmo redirecionamento que combinamos no arquivo principal (index.html)
+            // Ele voltará para a tela de seleção de Ranking/Missões no seu jogo.
+            window.location.href = 'index.html?screen=rankingmissions';
+        });
+    </script>
+</body>
+</html>
