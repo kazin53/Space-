@@ -1,0 +1,2176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6355747739661400"
+     crossorigin="anonymous"></script>
+
+    <title>Space Balloon Pixel Edition</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive; /* Fonte estilo pixel art */
+            background: radial-gradient(circle, rgba(100,200,255,0.8), rgba(0,100,200,0.9));
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            image-rendering: optimizeSpeed; /* Para garantir que os pixels não sejam suavizados */
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+        canvas {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            image-rendering: pixelated; /* Crucial para canvas pixel art */
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+        /* Importa a fonte pixel art do Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+        #ui {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 16px; /* Ajustado para pixel art */
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8); /* Sombra mais forte para contraste */
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-rendering: optimizeLegibility; /* Para textos pixelados */
+            -webkit-font-smoothing: none;
+        }
+        #level-indicator {
+            font-size: 12px; /* Ajustado para pixel art */
+            color: #ADD8E6;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            margin-top: 2px;
+        }
+
+        #game-over, #game-win, #pause-screen, #settings-screen, #version-select-screen, #ranking-missions-select-screen, #missions-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9); /* Fundo mais escuro para pixel art */
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #game-over.active, #game-win.active, #pause-screen.active, #settings-screen.active, #version-select-screen.active, #ranking-missions-select-screen.active, #missions-screen.active {
+            opacity: 1;
+        }
+        #game-over h1, #game-win h1, #pause-screen h1, #settings-screen h1, #version-select-screen h1, #ranking-missions-select-screen h1, #missions-screen h1 {
+            font-size: 2.5em; /* Ajustado para pixel art */
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.7); /* Efeito pixelado na sombra */
+        }
+        #game-over h1 { color: #FF5252; }
+        #game-win h1 { color: #4CAF50; text-shadow: 3px 3px 0px rgba(0, 255, 0, 0.7); animation: win-pulse 1.5s infinite; }
+        @keyframes win-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } } /* Pulso mais sutil */
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        #restart-btn, #play-again-win-btn, #pause-btn, #resume-btn, .game-button, #settings-back-btn, #back-to-start-btn, .version-button, #version-back-btn, #ranking-button, #ranking-general-btn, #view-missions-btn, #ranking-missions-back-btn, #missions-back-btn {
+            margin-top: 20px;
+            padding: 10px 20px; /* Reduzido o padding para botões pixelados */
+            font-size: 1.2em; /* Ajustado para pixel art */
+            background: linear-gradient(45deg, #FF5252, #FF9800);
+            color: white;
+            border: 2px solid #333; /* Borda sólida pixelada */
+            border-radius: 5px; /* Bordas quadradas */
+            cursor: pointer;
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.5); /* Sombra pixelada */
+            transition: all 0.1s; /* Transição mais rápida */
+            text-decoration: none;
+            display: inline-block;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .game-button:hover, #settings-back-btn:hover, #back-to-start-btn:hover, .version-button:hover, #version-back-btn:hover, #ranking-button:hover, #ranking-general-btn:hover, #view-missions-btn:hover, #ranking-missions-back-btn:hover, #missions-back-btn:hover {
+            transform: translate(1px, 1px); /* Pequeno deslocamento para simular clique pixelado */
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5); /* Sombra ao clicar */
+        }
+        .top-right-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 100;
+        }
+        .top-right-controls button {
+            padding: 6px 10px; /* Ainda menor */
+            font-size: 0.9em; /* Ainda menor */
+            background: rgba(0, 0, 0, 0.7); /* Fundo mais escuro */
+            color: white;
+            border: 1px solid #555; /* Borda sutil */
+            border-radius: 3px; /* Bordas mínimas */
+            cursor: pointer;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+            transition: background 0.1s, transform 0.1s;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .top-right-controls button:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translate(0.5px, 0.5px);
+        }
+
+        #start-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(100,200,255,0.8), rgba(0,100,200,0.9));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #start-screen.active {
+            opacity: 1;
+        }
+        #start-title {
+            font-size: 2.8rem; /* Ajustado para pixel art */
+            color: white;
+            text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.7); /* Sombra pixelada mais pronunciada */
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        .start-button {
+            background: linear-gradient(45deg, #FF5252, #FF9800);
+            color: white;
+            border: 2px solid #333;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.5);
+            transition: all 0.1s;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .start-button:hover {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilos da Tela de Configurações */
+        .settings-option {
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+            max-width: 400px;
+        }
+        .settings-option label {
+            font-size: 1.1em; /* Ajustado para pixel art */
+            margin-bottom: 10px;
+            color: #FFF;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .color-palettes {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .color-swatch {
+            width: 30px; /* Tamanho menor para swatches */
+            height: 30px;
+            border-radius: 3px; /* Quadrado */
+            border: 2px solid rgba(255,255,255,0.7);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+        }
+        .color-swatch:hover {
+            transform: scale(1.05); /* Pulso menor */
+            box-shadow: 2px 2px 0px rgba(255,255,255,0.8);
+        }
+        .color-swatch.selected {
+            border: 2px solid #4CAF50;
+            box-shadow: 2px 2px 0px #4CAF50;
+            transform: scale(1.1);
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px; /* Mais fino */
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 2px; /* Mais quadrado */
+            margin-top: 10px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px; /* Menor */
+            height: 20px; /* Menor */
+            border-radius: 3px; /* Quadrado */
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+        }
+        #sensitivity-value {
+            font-size: 1em; /* Ajustado */
+            margin-top: 5px;
+        }
+        .pause-buttons, .version-buttons, .ranking-missions-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        /* SPLASH SCREEN */
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(100,200,255,0.8), rgba(0,100,200,0.9));
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            font-size: 2em;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: opacity 1s ease-out;
+            opacity: 1;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #splash-screen img {
+            width: 80px; /* Menor para pixel art */
+            height: 80px;
+            animation: spin 1.5s linear infinite;
+            margin-bottom: 20px;
+            image-rendering: pixelated;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Estilos para a tela de seleção de versão */
+        #version-select-screen h1, #ranking-missions-select-screen h1, #missions-screen h1 {
+            color: #fff;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .version-button {
+            background: linear-gradient(45deg, #4285F4, #34A853);
+            color: white;
+            border: 2px solid #333;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+            transition: all 0.1s;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 180px; /* Menor */
+            font-family: 'Press Start 2P', cursive;
+        }
+        .version-button:hover {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.4);
+        }
+        #diamond-button {
+            background: linear-gradient(45deg, #00BCD4, #00C853);
+        }
+
+        /* Estilos para a área de missões in-game */
+        #mission-display {
+            position: absolute;
+            bottom: 10px; /* Agora no canto inferior direito */
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7); /* Fundo mais escuro */
+            border-radius: 5px; /* Mais quadrado */
+            padding: 8px 12px;
+            color: white;
+            font-size: 14px; /* Ajustado para pixel art */
+            max-width: 220px; /* Menor ainda */
+            max-height: 120px; /* Menor ainda */
+            overflow-y: auto;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.8); /* Sombra pixelada */
+            z-index: 100;
+            display: none;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .mission-item-in-game {
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+        .mission-item-in-game strong {
+            color: #FFC107;
+            font-size: 0.8em; /* Títulos menores para pixel art */
+        }
+        .mission-item-in-game .progress {
+            font-size: 0.7em; /* Progresso ainda menor */
+            color: #ADD8E6;
+        }
+        .mission-item-in-game.completed {
+            color: #8BC34A;
+            text-decoration: line-through;
+        }
+        .mission-item-in-game.completed strong {
+            color: #8BC34A;
+        }
+
+        /* Notificação de Missão Concluída (Pixel Art) */
+        #mission-complete-notification {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #FFD700; /* Ouro */
+            padding: 10px 20px;
+            color: white;
+            font-size: 1.2em;
+            text-align: center;
+            border-radius: 5px;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.6);
+            z-index: 300;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            font-family: 'Press Start 2P', cursive;
+            white-space: pre-wrap; /* Para quebra de linha no texto */
+        }
+        #mission-complete-notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Estilos para a tela de Missões */
+        #missions-screen .missions-category {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+            text-align: left;
+        }
+        #missions-screen .missions-category h2 {
+            font-size: 1.8em;
+            color: #FFC107;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.7);
+        }
+        #missions-screen .missions-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px; /* Espaço para scrollbar */
+        }
+        #missions-screen .mission-item {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 8px;
+            color: white;
+            font-size: 0.9em;
+            line-height: 1.3;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+        }
+        #missions-screen .mission-item strong {
+            color: #90EE90; /* Cor para títulos de missão */
+            font-size: 1.1em;
+        }
+        #missions-screen .mission-item .description {
+            font-size: 0.8em;
+            color: #D3D3D3;
+        }
+        #missions-screen .mission-item .progress-rewards {
+            font-size: 0.75em;
+            color: #ADD8E6;
+            margin-top: 5px;
+        }
+        #missions-screen .mission-item.completed {
+            background: rgba(0, 100, 0, 0.5);
+            border-color: #008000;
+            color: #B0E0E6;
+            text-decoration: line-through;
+        }
+        #missions-screen .mission-item.completed strong {
+            color: #7CFC00;
+        }
+        #missions-screen .missions-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        #missions-screen .missions-list::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 4px;
+        }
+        #missions-screen .missions-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        #missions-screen .missions-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+    </style>
+</head>
+<body>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+    <div id="splash-screen">
+        <img src="https://em-content.zobj.net/source/apple/354/umbrella_2602-fe0f.png" alt="Carregando..."> <p>Carregando Jogo...</p>
+    </div>
+
+    <div id="ui">
+        ☂️ <span id="score">0</span> | ❤️ <span id="lives">5</span> | 🏆 <span id="highscore">0</span><br>
+        <span id="level-indicator">Nível: Céu | Próximo: 1000 pontos</span>
+    </div>
+
+    <div class="top-right-controls">
+        <button id="pause-btn">PAUSE</button>
+        <button id="missions-toggle-btn">MISSÕES</button>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+    <div id="mission-display">
+        <h3>MISSÕES ATIVAS:</h3>
+        <div id="active-missions-list">
+            </div>
+    </div>
+
+    <div id="mission-complete-notification">
+        </div>
+
+    <div id="start-screen">
+        <h1 id="start-title">SPACE BALLOON</h1>
+        <button class="start-button" id="start-button">JOGAR</button>
+        <button class="start-button" id="settings-button">⚙️ CONFIGURAÇÕES</button>
+        <button class="start-button" id="ranking-button">🏆 RANKING</button>
+        <a href="https://kusuncod.github.io/CadzinB/" target="_blank" class="start-button">MEU SITE!</a>
+        <button class="start-button" id="versions-button">VERSÕES</button>
+        <a href="indexpoli.html" class="start-button">POLÍTICA DE PRIVACIDADE</a>
+    </div>
+
+    <div id="game-over">
+        <h1>FIM DE JOGO</h1>
+        <p id="final-score">Pontuação: 0</p>
+        <p id="final-level">Nível alcançado: Céu</p>
+        <button id="restart-btn">JOGAR NOVAMENTE</button>
+    </div>
+
+    <div id="game-win">
+        <h1>PARABÉNS! VOCÊ VENCEU!</h1>
+        <p id="final-score-win">Pontuação Final: 0</p>
+        <button id="play-again-win-btn">JOGAR NOVAMENTE</button>
+    </div>
+
+    <div id="pause-screen">
+        <h1>PAUSADO</h1>
+        <div class="pause-buttons">
+            <button id="resume-btn">CONTINUAR JOGO</button>
+            <button id="back-to-start-btn" class="game-button">TELA INICIAL</button>
+        </div>
+    </div>
+
+    <div id="settings-screen">
+        <h1>⚙️ CONFIGURAÇÕES</h1>
+        <div class="settings-option">
+            <label for="background-color-selector">COR DE FUNDO PADRÃO:</label>
+            <div class="color-palettes">
+                <div class="color-swatch selected" data-color="default" style="background: linear-gradient(to bottom, #87CEEB, #B0E0E6);"></div>
+                <div class="color-swatch" data-color="dark" style="background: linear-gradient(to bottom, #2c3e50, #34495e);"></div>
+                <div class="color-swatch" data-color="sunset" style="background: linear-gradient(to bottom, #fdc830, #f37335);"></div>
+                <div class="color-swatch" data-color="forest" style="background: linear-gradient(to bottom, #4CAF50, #8BC34A);"></div>
+            </div>
+        </div>
+        <div class="settings-option">
+            <label for="touch-sensitivity">SENSIBILIDADE AO TOQUE:</label>
+            <input type="range" id="touch-sensitivity" min="0.5" max="2.0" step="0.1" value="1.0">
+            <span id="sensitivity-value">1.0</span>
+        </div>
+        <button id="settings-back-btn" class="game-button">VOLTAR</button>
+    </div>
+
+    <div id="version-select-screen">
+        <h1>SELECIONE A VERSÃO</h1>
+        <div class="version-buttons">
+            <button class="version-button" id="silver-button">PRATA</button>
+            <button class="version-button" id="gold-button">OURO</button>
+            <button class="version-button" id="emerald-button">ESMERALDA</button>
+            <button class="version-button" id="diamond-button">DIAMOND</button>
+        </div>
+        <button id="version-back-btn" class="game-button">VOLTAR</button>
+    </div>
+
+    <div id="ranking-missions-select-screen">
+        <h1>RANKING E MISSÕES</h1>
+        <div class="ranking-missions-buttons">
+            <button id="ranking-general-btn" class="game-button">RANKING GERAL</button>
+            <button id="view-missions-btn" class="game-button">VER MISSÕES</button>
+        </div>
+        <button id="ranking-missions-back-btn" class="game-button">VOLTAR</button>
+    </div>
+
+    <div id="missions-screen">
+        <h1>SUAS MISSÕES</h1>
+        <div class="missions-category">
+            <h2>ATIVAS</h2>
+            <div id="missions-active-list" class="missions-list">
+                </div>
+        </div>
+        <div class="missions-category">
+            <h2>COMPLETADAS</h2>
+            <div id="missions-completed-list" class="missions-list">
+                </div>
+        </div>
+        <button id="missions-back-btn" class="game-button">VOLTAR</button>
+    </div>
+
+    <script>
+        // ===== CONFIGURAÇÕES GERAIS =====
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const livesElement = document.getElementById('lives');
+        const levelElement = document.getElementById('level-indicator');
+        const uiElement = document.getElementById('ui');
+        const highscoreElement = document.getElementById('highscore');
+
+        // Elementos da UI
+        const splashScreen = document.getElementById('splash-screen');
+        const startScreen = document.getElementById('start-screen');
+        const startButton = document.getElementById('start-button');
+        const settingsButton = document.getElementById('settings-button');
+        const rankingButton = document.getElementById('ranking-button'); // Botão de Ranking na tela inicial
+        const settingsScreen = document.getElementById('settings-screen');
+        const settingsBackBtn = document.getElementById('settings-back-btn');
+        const colorSwatches = document.querySelectorAll('.color-swatch');
+        const touchSensitivitySlider = document.getElementById('touch-sensitivity');
+        const sensitivityValueSpan = document.getElementById('sensitivity-value');
+        const versionsButton = document.getElementById('versions-button');
+        const versionSelectScreen = document.getElementById('version-select-screen');
+        const silverButton = document.getElementById('silver-button');
+        const goldButton = document.getElementById('gold-button');
+        const emeraldButton = document.getElementById('emerald-button');
+        const diamondButton = document.getElementById('diamond-button');
+        const versionBackBtn = document.getElementById('version-back-btn');
+        const gameOverScreen = document.getElementById('game-over');
+        const gameWinScreen = document.getElementById('game-win');
+        const pauseScreen = document.getElementById('pause-screen');
+        const finalScoreElement = document.getElementById('final-score');
+        const finalLevelElement = document.getElementById('final-level');
+        const finalScoreWinElement = document.getElementById('final-score-win');
+        const restartBtn = document.getElementById('restart-btn');
+        const playAgainWinBtn = document.getElementById('play-again-win-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const resumeBtn = document.getElementById('resume-btn');
+        const backToStartBtn = document.getElementById('back-to-start-btn');
+
+        // Elementos da UI para missões (in-game)
+        const missionDisplay = document.getElementById('mission-display');
+        const activeMissionsList = document.getElementById('active-missions-list');
+        const missionsToggleButton = document.getElementById('missions-toggle-btn');
+        let missionsDisplayVisible = false; // Estado inicial da visibilidade das missões
+
+        // Elemento da Notificação de Missão Concluída (NOVO)
+        const missionCompleteNotification = document.getElementById('mission-complete-notification');
+
+        // Elementos da Nova Tela de Seleção de Ranking/Missões (NOVO)
+        const rankingMissionsSelectScreen = document.getElementById('ranking-missions-select-screen');
+        const rankingGeneralBtn = document.getElementById('ranking-general-btn');
+        const viewMissionsBtn = document.getElementById('view-missions-btn');
+        const rankingMissionsBackBtn = document.getElementById('ranking-missions-back-btn');
+
+        // Elementos da Nova Tela de Missões Detalhada (NOVO)
+        const missionsScreen = document.getElementById('missions-screen');
+        const missionsActiveList = document.getElementById('missions-active-list');
+        const missionsCompletedList = document.getElementById('missions-completed-list');
+        const missionsBackBtn = document.getElementById('missions-back-btn');
+
+
+        // Variáveis de estado do jogo
+        let score = 0;
+        let lives = 5;
+        let currentLevelIndex = 0;
+        let transitionActive = false;
+        let transitionProgress = 0;
+        let highscore = localStorage.getItem('highscore') || 0;
+        let lastTime = 0;
+        const targetFps = 60;
+        const frameInterval = 1000 / targetFps;
+        let gameActive = false;
+        let isPaused = false;
+        let gameLoopRAF;
+        let floatingTexts = [];
+        let touchSensitivity = parseFloat(localStorage.getItem('touchSensitivity')) || 1.0;
+        let currentBackgroundPreset = localStorage.getItem('backgroundPreset') || 'default';
+
+        // ===== DADOS E LÓGICA DAS CONQUISTAS =====
+        let currentTotalRankingPoints = parseInt(localStorage.getItem('rankingPoints') || '0');
+        let userGold = parseInt(localStorage.getItem('userGold') || '0');
+        let userBrics = parseInt(localStorage.getItem('userBrics') || '0');
+
+        // Definição padrão das missões
+        const defaultMissions = [
+            { id: 'novatoCeu', title: 'NOVATO DOS CÉUS', description: 'Colete 1.000 pontos no Nível "Céu".', rankingPoints: 100, goldReward: 100, bricsReward: 0, progress: 0, target: 1000, type: 'pointsInLevel', level: 'Céu', completed: false },
+            { id: 'aventureiroDeserto', title: 'AVENTUREIRO DO DESERTO', description: 'Atinja e jogue por 30 segundos no Nível "Deserto".', rankingPoints: 200, goldReward: 200, bricsReward: 0, progress: 0, target: 30, type: 'timeInLevel', level: 'Deserto', completed: false, timer: 0 },
+            { id: 'mergulhadorProfundo', title: 'MERGULHADOR PROFUNDO', description: 'Colete 5 guarda-chuvas azuis (Oceano) em uma única partida.', rankingPoints: 300, goldReward: 300, bricsReward: 0, progress: 0, target: 5, type: 'collectColor', color: ['#00BFFF', '#1E90FF', '#4169E1', '#4682B4'], completed: false },
+            { id: 'resistenciaGelida', title: 'RESISTÊNCIA GÉLIDA', description: 'Sobreviva no Nível "Gelo" por 45 segundos.', rankingPoints: 400, goldReward: 400, bricsReward: 0, progress: 0, target: 45, type: 'timeInLevel', level: 'Gelo', completed: false, timer: 0 },
+            { id: 'conquistadorCosmos', title: 'CONQUISTADOR DO COSMOS', description: 'Atinja o Nível "Espaço".', rankingPoints: 500, goldReward: 500, bricsReward: 0, progress: 0, target: 1, type: 'reachLevel', level: 'Espaço', completed: false },
+            { id: 'colecionadorAgil', title: 'COLECIONADOR ÁGIL', description: 'Clique em 50 guarda-chuvas em uma única partida.', rankingPoints: 350, goldReward: 350, bricsReward: 0, progress: 0, target: 50, type: 'totalClicksMatch', completed: false },
+            { id: 'vidaExtra', title: 'VIDA EXTRA', description: 'Termine uma partida com 5 vidas restantes.', rankingPoints: 250, goldReward: 250, bricsReward: 0, progress: 0, target: 1, type: 'livesRemaining', completed: false },
+            { id: 'pontuadorMestre', title: 'PONTUADOR MESTRE', description: 'Alcance uma pontuação de 10.000 pontos em qualquer partida.', rankingPoints: 600, goldReward: 600, bricsReward: 0, progress: 0, target: 10000, type: 'totalScore', completed: false },
+            { id: 'exploradorCompleto', title: 'EXPLORADOR COMPLETO', description: 'Jogue em todos os 5 níveis (Céu, Deserto, Oceano, Gelo, Espaço) em partidas separadas.', rankingPoints: 700, goldReward: 700, bricsReward: 0, progress: 0, target: 5, type: 'visitAllLevels', completed: false, levelsVisited: { 'Céu': false, 'Deserto': false, 'Oceano': false, 'Gelo': false, 'Espaço': false } },
+            { id: 'imbativel', title: 'IMBATÍVEL', description: 'Vença o jogo (alcance a tela "Parabéns! Você Venceu!").', rankingPoints: 1000, goldReward: 0, bricsReward: 1, progress: 0, target: 1, type: 'winGame', completed: false }
+        ];
+
+        // Definição padrão das recompensas de ranking
+        const defaultRankingRewards = [
+            { id: 'pinoBronze', title: 'PINO DE BRONZE', description: 'Receba um "Pino de Bronze" em seu perfil!', pointsRequired: 500, unlocked: false },
+            { id: 'pinoPrata', title: 'PINO DE PRATA', description: 'Receba um "Pino de Prata", +1 vida inicial na próxima partida e 1 BRIC!', pointsRequired: 1500, bricsReward: 1, unlocked: false },
+            { id: 'pinoOuro', title: 'PINO DE OURO', description: 'Receba um "Pino de Ouro", guarda-chuvas valem 10% mais pontos e 2 BRICS!', pointsRequired: 3000, bricsReward: 2, unlocked: false },
+            { id: 'pinoDiamante', title: 'PINO DE DIAMANTE', description: 'Receba um "Pino de Diamante", desbloqueie um tema exclusivo para o jogo e 5 BRICS!', pointsRequired: 5000, bricsReward: 5, unlocked: false }
+        ];
+
+        let missions = [];
+        let rankingRewards = [];
+
+        // Funções para salvar e carregar dados das conquistas
+        function saveAchievementData() {
+            localStorage.setItem('rankingPoints', currentTotalRankingPoints);
+            localStorage.setItem('userGold', userGold);
+            localStorage.setItem('userBrics', userBrics);
+            localStorage.setItem('gameMissions', JSON.stringify(missions));
+            localStorage.setItem('gameRankingRewards', JSON.stringify(rankingRewards));
+            console.log("Dados de conquistas salvos!");
+        }
+
+        function loadAchievementData() {
+            try {
+                const savedMissions = JSON.parse(localStorage.getItem('gameMissions'));
+                const savedRankingRewards = JSON.parse(localStorage.getItem('gameRankingRewards'));
+
+                if (savedMissions) {
+                    missions = defaultMissions.map(defaultM => {
+                        const savedM = savedMissions.find(sm => sm.id === defaultM.id);
+                        if (savedM) {
+                            // Mescla os dados salvos com os padrões, garantindo que novas propriedades (como 'timer' ou 'levelsVisited') sejam mantidas
+                            return { ...defaultM, ...savedM };
+                        }
+                        return defaultM;
+                    });
+                    // Adiciona missões novas que podem ter sido adicionadas ao defaultMissions mas não estavam no save
+                    defaultMissions.forEach(defaultM => {
+                        if (!missions.some(m => m.id === defaultM.id)) {
+                            missions.push(JSON.parse(JSON.stringify(defaultM))); // Deep copy
+                        }
+                    });
+                } else {
+                    missions = JSON.parse(JSON.stringify(defaultMissions)); // Deep copy para evitar referência
+                }
+
+                if (savedRankingRewards) {
+                    rankingRewards = defaultRankingRewards.map(defaultR => {
+                        const savedR = savedRankingRewards.find(sr => sr.id === defaultR.id);
+                        if (savedR) {
+                            return { ...defaultR, ...savedR };
+                        }
+                        return defaultR;
+                    });
+                    defaultRankingRewards.forEach(defaultR => {
+                        if (!rankingRewards.some(r => r.id === defaultR.id)) {
+                            rankingRewards.push(JSON.parse(JSON.stringify(defaultR)));
+                        }
+                    });
+                } else {
+                    rankingRewards = JSON.parse(JSON.stringify(defaultRankingRewards));
+                }
+
+                currentTotalRankingPoints = parseInt(localStorage.getItem('rankingPoints') || '0');
+                userGold = parseInt(localStorage.getItem('userGold') || '0');
+                userBrics = parseInt(localStorage.getItem('userBrics') || '0');
+
+                console.log("Dados de conquistas carregados!");
+            } catch (e) {
+                console.error("Erro ao carregar dados de conquistas do localStorage:", e);
+                // Em caso de erro, resetar para os padrões para evitar quebrar o jogo
+                missions = JSON.parse(JSON.stringify(defaultMissions));
+                rankingRewards = JSON.parse(JSON.stringify(defaultRankingRewards));
+                currentTotalRankingPoints = 0;
+                userGold = 0;
+                userBrics = 0;
+                saveAchievementData(); // Salva os valores padrão
+            }
+        }
+
+        // Função para mostrar a notificação de missão concluída (NOVO)
+        function showMissionCompleteNotification(title, rankingPoints, goldReward, bricsReward) {
+            missionCompleteNotification.innerHTML = `
+                🏆 MISSÃO CONCLUÍDA! 🏆\n
+                <strong>${title}</strong>\n
+                +${rankingPoints} PONTOS DE RANKING\n
+                +${goldReward} OURO\n
+                +${bricsReward} BRIC${bricsReward !== 1 ? 'S' : ''}
+            `;
+            missionCompleteNotification.style.display = 'block';
+            setTimeout(() => {
+                missionCompleteNotification.classList.add('show');
+            }, 10); // Pequeno delay para a transição funcionar
+
+            setTimeout(() => {
+                missionCompleteNotification.classList.remove('show');
+                missionCompleteNotification.addEventListener('transitionend', function handler() {
+                    missionCompleteNotification.style.display = 'none';
+                    missionCompleteNotification.removeEventListener('transitionend', handler);
+                }, { once: true });
+            }, 4000); // Exibe por 4 segundos
+        }
+
+        // Função para atualizar o progresso de uma missão
+        function updateMissionProgress(missionId, progressToAdd, options = {}) {
+            const mission = missions.find(m => m.id === missionId);
+            if (!mission || mission.completed) return;
+
+            let updated = false;
+
+            switch (mission.type) {
+                case 'pointsInLevel':
+                case 'totalClicksMatch':
+                case 'totalScore':
+                    // Para 'pointsInLevel', verifica se o nível atual corresponde ao nível da missão
+                    if (mission.type === 'pointsInLevel' && options.levelName !== mission.level) break;
+
+                    mission.progress += progressToAdd;
+                    if (mission.progress >= mission.target) {
+                        mission.progress = mission.target;
+                        mission.completed = true;
+                        currentTotalRankingPoints += mission.rankingPoints;
+                        userGold += mission.goldReward;
+                        userBrics += mission.bricsReward;
+                        showMissionCompleteNotification(mission.title, mission.rankingPoints, mission.goldReward, mission.bricsReward); // Usa a nova notificação
+                    }
+                    updated = true;
+                    break;
+                case 'timeInLevel':
+                    if (options.levelName === mission.level) {
+                        mission.timer = (mission.timer || 0) + progressToAdd; // progressToAdd é deltaTime em segundos
+                        if (mission.timer >= mission.target && !mission.completed) {
+                            mission.progress = mission.target; // Marca o progresso visualmente
+                            mission.completed = true;
+                            currentTotalRankingPoints += mission.rankingPoints;
+                            userGold += mission.goldReward;
+                            userBrics += mission.bricsReward;
+                            showMissionCompleteNotification(mission.title, mission.rankingPoints, mission.goldReward, mission.bricsReward); // Usa a nova notificação
+                        }
+                    }
+                    updated = true;
+                    break;
+                case 'reachLevel':
+                    if (options.levelName === mission.level && !mission.completed) {
+                        mission.progress = mission.target;
+                        mission.completed = true;
+                        currentTotalRankingPoints += mission.rankingPoints;
+                        userGold += mission.goldReward;
+                        userBrics += mission.bricsReward;
+                        showMissionCompleteNotification(mission.title, mission.rankingPoints, mission.goldReward, mission.bricsReward); // Usa a nova notificação
+                    }
+                    updated = true;
+                    break;
+                case 'collectColor':
+                    if (options.clickedColor && mission.color.includes(options.clickedColor)) {
+                        mission.progress += progressToAdd; // progressToAdd é 1 para cada coleta
+                        if (mission.progress >= mission.target) {
+                            mission.completed = true;
+                            currentTotalRankingPoints += mission.rankingPoints;
+                            userGold += mission.goldReward;
+                            userBrics += mission.bricsReward;
+                            showMissionCompleteNotification(mission.title, mission.rankingPoints, mission.goldReward, mission.bricsReward); // Usa a nova notificação
+                        }
+                    }
+                    updated = true;
+                    break;
+                case 'livesRemaining':
+                    // Esta missão é verificada apenas no final do jogo
+                    if (options.livesRemaining === mission.target && !mission.completed) {
+                        mission.progress = mission.target;
+                        mission.completed = true;
+                        currentTotalRankingPoints += mission.rankingPoints;
+                        userGold += mission.goldReward;
+                        userBrics += mission.bricsReward;
+                        showMissionCompleteNotification(mission.title, mission.rankingPoints, mission.goldReward, mission.bricsReward); // Usa a nova notificação
+                    }
+                    updated = true;
+                    break;
+                case 'visitAllLevels':
+                    if (options.levelName && mission.levelsVisited && !mission.levelsVisited[options.levelName]) {
+                        mission.levelsVisited[options.levelName] = true;
+                        mission.progress++;
+                        if (mission.progress >= mission.target && !mission.completed) {
+                            mission.completed = true;
+                            currentTotalRankingPoints += mission.rankingPoints;
+                            userGold += mission.goldReward;
+                            userBrics += mission.bricsReward;
+                            showMissionCompleteNotification(mission.title, mission.rankingPoints, mission.goldReward, mission.bricsReward); // Usa a nova notificação
+                        }
+                    }
+                    updated = true;
+                    break;
+                case 'winGame':
+                    if (options.winStatus === true && !mission.completed) {
+                        mission.progress = mission.target;
+                        mission.completed = true;
+                        currentTotalRankingPoints += mission.rankingPoints;
+                        userBrics += mission.bricsReward; // Vitória dá BRICS, não ouro
+                        showMissionCompleteNotification(mission.title, mission.rankingPoints, mission.goldReward, mission.bricsReward); // Usa a nova notificação
+                    }
+                    updated = true;
+                    break;
+            }
+
+            if (updated) {
+                checkRankingRewards(); // Verifica se alguma recompensa de ranking foi desbloqueada
+                saveAchievementData(); // Salva o estado atual das missões e recompensas
+                if (missionsDisplayVisible) {
+                    renderActiveMissions(); // Atualiza a exibição das missões no jogo (painel in-game)
+                }
+            }
+        }
+
+        // Função para verificar e desbloquear recompensas de ranking
+        function checkRankingRewards() {
+            rankingRewards.forEach(reward => {
+                if (!reward.unlocked && currentTotalRankingPoints >= reward.pointsRequired) {
+                    reward.unlocked = true;
+                    userBrics += reward.bricsReward || 0;
+                    // Notificação para recompensas de ranking (poderia ser uma notificação diferente se quisesse)
+                    showMissionCompleteNotification(`🏅 RECOMPENSA DE RANKING! 🏅\n${reward.title}`, reward.pointsRequired, 0, reward.bricsReward || 0);
+                    saveAchievementData(); // Salva imediatamente após desbloquear
+                }
+            });
+        }
+
+        // Resetar o progresso de missões por partida (as que são 'em uma única partida')
+        function resetPerMatchMissions() {
+            missions.forEach(mission => {
+                // Tipos de missões que resetam a cada partida se não estiverem completas
+                const resetTypes = ['collectColor', 'totalClicksMatch', 'livesRemaining', 'pointsInLevel', 'timeInLevel'];
+                if (resetTypes.includes(mission.type) && !mission.completed) {
+                    mission.progress = 0;
+                    if (mission.type === 'timeInLevel') mission.timer = 0; // Reseta o timer para missões de tempo
+                }
+                // Missões de alcance de nível ou vitória, se não completas, não resetam seu "progresso" visual, mas o estado de completed é falso
+                // 'visitAllLevels' é acumulativo e não reseta por partida
+            });
+            saveAchievementData(); // Salva o reset
+        }
+
+        // Função para renderizar as missões ativas na UI do jogo (painel inferior direito)
+        function renderActiveMissions() {
+            activeMissionsList.innerHTML = ''; // Limpa a lista
+            const missionsToShow = missions.filter(m => !m.completed); // Mostra apenas missões não completas
+
+            if (missionsToShow.length === 0) {
+                activeMissionsList.innerHTML = 'NENHUMA MISSÃO ATIVA. BOM TRABALHO!';
+                return;
+            }
+
+            missionsToShow.forEach(mission => {
+                const missionDiv = document.createElement('div');
+                missionDiv.classList.add('mission-item-in-game');
+
+                let progressText = '';
+                if (mission.type === 'pointsInLevel' || mission.type === 'totalClicksMatch' || mission.type === 'totalScore') {
+                    progressText = `${Math.min(mission.progress, mission.target)}/${mission.target} PONTOS`;
+                } else if (mission.type === 'timeInLevel') {
+                    progressText = `${Math.min(Math.floor(mission.timer || 0), mission.target)}/${mission.target} SEGUNDOS`;
+                } else if (mission.type === 'collectColor') {
+                    progressText = `${Math.min(mission.progress, mission.target)}/${mission.target} COLETADOS`;
+                } else if (mission.type === 'livesRemaining') {
+                    progressText = `TERMINE COM ${mission.target} VIDAS`; // Não mostra progresso parcial
+                } else if (mission.type === 'reachLevel') {
+                    progressText = `ATINGIR NÍVEL "${mission.level.toUpperCase()}"`;
+                } else if (mission.type === 'visitAllLevels') {
+                    progressText = `${mission.progress}/${mission.target} NÍVEIS VISITADOS`;
+                } else if (mission.type === 'winGame') {
+                    progressText = `VENÇA O JOGO!`;
+                }
+
+                missionDiv.innerHTML = `<strong>${mission.title}</strong><br><span class="progress">${progressText}</span>`;
+                activeMissionsList.appendChild(missionDiv);
+            });
+        }
+
+        // Função para renderizar todas as missões na nova tela de Missões
+        function renderAllMissions() {
+            missionsActiveList.innerHTML = '';
+            missionsCompletedList.innerHTML = '';
+
+            const active = missions.filter(m => !m.completed);
+            const completed = missions.filter(m => m.completed);
+
+            if (active.length === 0) {
+                missionsActiveList.innerHTML = '<div class="mission-item"><p>Nenhuma missão ativa no momento.</p></div>';
+            } else {
+                active.forEach(mission => {
+                    const missionDiv = document.createElement('div');
+                    missionDiv.classList.add('mission-item');
+                    let progressText = '';
+                    if (mission.type === 'pointsInLevel' || mission.type === 'totalClicksMatch' || mission.type === 'totalScore') {
+                        progressText = `Progresso: ${Math.min(mission.progress, mission.target)}/${mission.target} Pontos`;
+                    } else if (mission.type === 'timeInLevel') {
+                        progressText = `Progresso: ${Math.min(Math.floor(mission.timer || 0), mission.target)}/${mission.target} Segundos`;
+                    } else if (mission.type === 'collectColor') {
+                        progressText = `Progresso: ${Math.min(mission.progress, mission.target)}/${mission.target} Coletados`;
+                    } else if (mission.type === 'livesRemaining') {
+                        progressText = `Objetivo: Terminar com ${mission.target} vidas`;
+                    } else if (mission.type === 'reachLevel') {
+                        progressText = `Objetivo: Atingir o Nível "${mission.level.toUpperCase()}"`;
+                    } else if (mission.type === 'visitAllLevels') {
+                        progressText = `Progresso: ${mission.progress}/${mission.target} Níveis Visitados`;
+                    } else if (mission.type === 'winGame') {
+                        progressText = `Objetivo: Vencer o Jogo!`;
+                    }
+                    const rewardsText = `Recompensas: ${mission.rankingPoints} RP, ${mission.goldReward} Ouro, ${mission.bricsReward} BRICS`;
+                    missionDiv.innerHTML = `
+                        <strong>${mission.title}</strong><br>
+                        <span class="description">${mission.description}</span><br>
+                        <span class="progress-rewards">${progressText} | ${rewardsText}</span>
+                    `;
+                    missionsActiveList.appendChild(missionDiv);
+                });
+            }
+
+            if (completed.length === 0) {
+                missionsCompletedList.innerHTML = '<div class="mission-item"><p>Nenhuma missão completada ainda.</p></div>';
+            } else {
+                completed.forEach(mission => {
+                    const missionDiv = document.createElement('div');
+                    missionDiv.classList.add('mission-item', 'completed');
+                    const rewardsText = `Recompensas: ${mission.rankingPoints} RP, ${mission.goldReward} Ouro, ${mission.bricsReward} BRICS`;
+                    missionDiv.innerHTML = `
+                        <strong>${mission.title}</strong><br>
+                        <span class="description">${mission.description}</span><br>
+                        <span class="progress-rewards">COMPLETADA! | ${rewardsText}</span>
+                    `;
+                    missionsCompletedList.appendChild(missionDiv);
+                });
+            }
+        }
+
+
+        // ===== SISTEMA DE SOM =====
+        class SoundSystem {
+            constructor() {
+                this.sounds = {
+                    click: { file: "clique.mp3", volume: 0.7, multiple: true }, // 'multiple' para sons que podem tocar rapidamente
+                    gameOver: { file: "gameover.mp3", volume: 0.7 },
+                    background: { file: "musica.mp3", volume: 0.5, loop: true },
+                    levelUp: { file: "nivel.mp3", volume: 0.8 },
+                    menu: { file: "telainicio.mp3", volume: 0.4, loop: true },
+                    life: { file: "vida.mp3", volume: 0.6, multiple: true } // 'multiple' para sons de perda de vida
+                };
+                this.audioElements = {};
+                this.isAudioEnabled = false;
+                this.isMuted = false;
+                this.activeSounds = {}; // Para gerenciar instâncias de sons 'multiple'
+            }
+
+            // Pré-carrega os áudios. Tentativa inicial, pode ser ativada mais tarde.
+            preload() {
+                for (const [key, config] of Object.entries(this.sounds)) {
+                    if (!config.multiple) {
+                        const audio = new Audio(config.file);
+                        audio.volume = config.volume;
+                        audio.loop = config.loop || false;
+                        this.audioElements[key] = audio;
+                        audio.load();
+                    }
+                }
+            }
+
+            // MODIFICAÇÃO AQUI: Retiramos o play inicial aqui para que a splash screen possa sumir.
+            // O play do menu será chamado explicitamente quando a splash screen sumir.
+            async enableAudioContext() {
+                if (this.isAudioEnabled) return;
+
+                try {
+                    // Tenta tocar um som mudo na primeira interação para desbloquear o AudioContext
+                    const tempAudio = new Audio();
+                    tempAudio.src = this.sounds.click.file; // Usa um som pequeno
+                    tempAudio.volume = 0;
+                    await tempAudio.play();
+                    this.isAudioEnabled = true;
+                    console.log("Contexto de áudio habilitado.");
+                } catch (e) {
+                    console.warn("Falha ao habilitar contexto de áudio (pode ser normal se não houver interação do usuário):", e);
+                }
+            }
+
+
+            play(key) {
+                if (!this.isAudioEnabled && (key === "menu" || key === "background")) {
+                    console.log(`Tentativa de tocar '${key}' antes da habilitação do áudio. Ignorando por enquanto.`);
+                    return; // Não tente tocar áudios longos sem interação confirmada.
+                }
+
+                if (this.isMuted) return;
+
+                try {
+                    const config = this.sounds[key];
+                    if (!config) {
+                        console.warn(`Som com a chave '${key}' não encontrado.`);
+                        return;
+                    }
+
+                    let audio;
+                    if (config.multiple) {
+                        audio = new Audio(config.file);
+                        audio.volume = config.volume;
+                    } else {
+                        audio = this.audioElements[key];
+                        if (!audio) {
+                            audio = new Audio(config.file);
+                            audio.volume = config.volume;
+                            audio.loop = config.loop || false;
+                            this.audioElements[key] = audio;
+                        }
+                        audio.currentTime = 0;
+                    }
+
+                    if (audio) {
+                        if (config.loop) {
+                            audio.loop = true;
+                            if (this.activeSounds[key]) {
+                                this.activeSounds[key].pause();
+                                this.activeSounds[key].currentTime = 0;
+                            }
+                            this.activeSounds[key] = audio;
+                        }
+
+                        audio.play().catch(e => console.warn(`Áudio '${key}' não pôde tocar:`, e));
+                    }
+                } catch (e) {
+                    console.error(`Erro ao tocar '${key}':`, e);
+                }
+            }
+
+            stop(key) {
+                const audio = this.audioElements[key];
+                if (audio) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+                if (this.activeSounds[key]) {
+                    this.activeSounds[key].pause();
+                    this.activeSounds[key].currentTime = 0;
+                    delete this.activeSounds[key];
+                }
+            }
+
+            stopAll() {
+                for (const key in this.audioElements) {
+                    this.stop(key);
+                }
+                for (const key in this.activeSounds) {
+                    this.stop(key);
+                }
+            }
+
+            toggleMute() {
+                this.isMuted = !this.isMuted;
+                for (const audio of Object.values(this.audioElements)) {
+                    audio.muted = this.isMuted;
+                }
+                for (const audio of Object.values(this.activeSounds)) {
+                    if (audio) audio.muted = this.isMuted;
+                }
+                // Se desmutar e o áudio ainda não estiver habilitado, tenta habilitar
+                if (!this.isMuted && !this.isAudioEnabled) {
+                     this.enableAudioContext();
+                }
+                return this.isMuted;
+            }
+        }
+
+        const soundSystem = new SoundSystem();
+        soundSystem.preload();
+
+        // ===== SISTEMA DE PARTÍCULAS =====
+        let currentUmbrellas = [];
+        let currentParticles = [];
+
+        // ===== ELEMENTOS DE FUNDO =====
+        let clouds = [], cacti = [], dunes = [], stars = [], nebulas = [], icebergs = [], snowflakes = [], waterBubbles = [];
+
+        // ===== NÍVEIS DO JOGO =====
+        const levels = [
+            {
+                name: "Céu",
+                umbrellaColors: ['#FF5252', '#4285F4', '#FBBC05', '#34A853'],
+                spawnRate: 0.015,
+                baseSpeed: 2,
+                scoreValue: 20,
+                nextLevelScore: 1000
+            },
+            {
+                name: "Deserto",
+                umbrellaColors: ['#A0522D', '#D2B48C', '#F4A460', '#BDB76B'],
+                spawnRate: 0.02,
+                baseSpeed: 3,
+                scoreValue: 50,
+                nextLevelScore: 5000
+            },
+            {
+                name: "Oceano",
+                umbrellaColors: ['#00BFFF', '#1E90FF', '#4169E1', '#4682B4'], // Cores azuis para missão
+                spawnRate: 0.025,
+                baseSpeed: 4,
+                scoreValue: 100,
+                nextLevelScore: 20000
+            },
+            {
+                name: "Gelo",
+                umbrellaColors: ['#FFFFFF', '#ADD8E6', '#87CEEB', '#B0E0E6'],
+                spawnRate: 0.03,
+                baseSpeed: 5,
+                scoreValue: 120,
+                nextLevelScore: 40000
+            },
+            {
+                name: "Espaço",
+                umbrellaColors: ['#ff00ff', '#00ffff', '#ffff00', '#ff00ff'],
+                spawnRate: 0.035,
+                baseSpeed: 6,
+                scoreValue: 150,
+                nextLevelScore: 100000
+            }
+        ];
+
+        const backgroundPresets = {
+            'default': "linear-gradient(to bottom, #87CEEB, #B0E0E6)",
+            'dark': "linear-gradient(to bottom, #2c3e50, #34495e)",
+            'sunset': "linear-gradient(to bottom, #fdc830, #f37335)",
+            'forest': "linear-gradient(to bottom, #4CAF50, #8BC34A)"
+        };
+
+        // ===== FUNÇÕES DO JOGO =====
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (gameActive && !isPaused) {
+                initializeLevelElements();
+            }
+        }
+
+        function applyGameBackground() {
+            const currentLevelData = levels[currentLevelIndex];
+            if (currentLevelData.name.includes('Espaço')) {
+                uiElement.style.textShadow = '0 0 10px #00ffff, 0 0 20px #ff00ff';
+            } else {
+                uiElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+            }
+        }
+
+        function applyMenuBackground() {
+            document.body.style.background = backgroundPresets[currentBackgroundPreset] || backgroundPresets['default'];
+        }
+
+        function initializeLevelElements() {
+            clouds = []; cacti = []; dunes = []; stars = []; nebulas = []; icebergs = []; snowflakes = []; waterBubbles = [];
+
+            const levelData = levels[currentLevelIndex];
+            if (levelData.name.includes('Céu')) {
+                clouds = Array.from({ length: 5 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.4,
+                    speed: 0.2 + Math.random() * 0.3,
+                    size: 50 + Math.random() * 70,
+                    opacity: 0.7 + Math.random() * 0.3
+                }));
+            } else if (levelData.name.includes('Deserto')) {
+                cacti = Array.from({ length: 10 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height - (30 + Math.random() * 70),
+                    height: 30 + Math.random() * 70
+                }));
+                dunes = Array.from({ length: 3 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height - (30 + Math.random() * 50),
+                    width: 150 + Math.random() * 200,
+                    height: 30 + Math.random() * 50,
+                    color: `rgba(${255 - Math.random() * 50}, ${215 - Math.random() * 50}, ${0}, 0.8)`
+                }));
+            } else if (levelData.name.includes('Oceano')) {
+                waterBubbles = Array.from({ length: 30 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height + Math.random() * 100,
+                    size: 5 + Math.random() * 15,
+                    speed: 1 + Math.random() * 2,
+                    opacity: 0.4 + Math.random() * 0.6
+                }));
+            } else if (levelData.name.includes('Gelo')) {
+                icebergs = Array.from({ length: 5 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: canvas.height * 0.8 + Math.random() * canvas.height * 0.2,
+                    size: 80 + Math.random() * 100,
+                    opacity: 0.6 + Math.random() * 0.4
+                }));
+                snowflakes = Array.from({ length: 50 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: 2 + Math.random() * 3,
+                    speedY: 0.5 + Math.random() * 1,
+                    speedX: (Math.random() - 0.5) * 0.5,
+                    opacity: 0.6 + Math.random() * 0.4
+                }));
+            } else if (levelData.name.includes('Espaço')) {
+                stars = Array.from({ length: 200 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    opacity: Math.random(),
+                    speed: Math.random() * 0.2
+                }));
+                nebulas = Array.from({ length: 3 }, () => ({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height * 0.5,
+                    radius: 100 + Math.random() * 200,
+                    color: `hsla(${Math.random() * 360}, 80%, 60%, 0.1)`,
+                    speed: Math.random() * 0.1 - 0.05
+                }));
+            }
+        }
+
+        function createUmbrella() {
+            const levelData = levels[currentLevelIndex];
+            const color = levelData.umbrellaColors[Math.floor(Math.random() * levelData.umbrellaColors.length)];
+            const speed = levelData.baseSpeed + (score / 20000);
+
+            currentUmbrellas.push({
+                x: Math.floor(Math.random() * (canvas.width - 60)), // Ajustado para pixel
+                y: -60, // Ajustado para pixel
+                speed: speed,
+                color: color,
+                width: 60, // Tamanho menor
+                height: 70, // Tamanho menor
+            });
+        }
+
+        // Função para desenhar o guarda-chuva em pixel art
+        function drawUmbrella(u) {
+            const pixelSize = 5; // Tamanho base do pixel, ajuste para mais ou menos detalhe
+
+            const centerX = Math.floor(u.x + u.width / 2);
+            const canopyTopY = Math.floor(u.y);
+            const canopyBottomY = Math.floor(u.y + u.height * 0.5);
+            const handleStartY = canopyBottomY - pixelSize * 2;
+            const handleLength = u.height * 0.5;
+            const handleThickness = pixelSize;
+            const handleColor = '#654321';
+            const tipRadius = pixelSize * 1.5;
+
+            // Cabo
+            ctx.fillStyle = handleColor;
+            ctx.fillRect(centerX - Math.floor(handleThickness / 2), handleStartY, handleThickness, handleLength);
+
+            // Ponta do cabo (gancho)
+            ctx.fillStyle = handleColor;
+            // Usando retângulos para simular o gancho
+            ctx.fillRect(centerX - tipRadius, handleStartY + handleLength - pixelSize, pixelSize * 2, pixelSize);
+            ctx.fillRect(centerX - tipRadius, handleStartY + handleLength - pixelSize * 2, pixelSize, pixelSize * 2);
+
+            // Parte de cima (tampa)
+            ctx.fillStyle = darkenColor(u.color, 60);
+            ctx.fillRect(centerX - pixelSize, canopyTopY, pixelSize * 2, pixelSize * 2);
+
+            // Copas do guarda-chuva (simplificado para retângulos)
+            const segments = 4; // Menos segmentos para um visual mais pixelado
+            const radius = u.width / 2;
+
+            for (let i = 0; i < segments; i++) {
+                const angle1 = (i / segments) * Math.PI;
+                const angle2 = ((i + 1) / segments) * Math.PI;
+
+                // Pontos na base do arco
+                const x1 = centerX - radius * Math.cos(angle1);
+                const y1 = canopyBottomY;
+                const x2 = centerX - radius * Math.cos(angle2);
+                const y2 = canopyBottomY;
+
+                // Usando fillRect para criar segmentos de bloco
+                ctx.fillStyle = u.color;
+                ctx.beginPath();
+                ctx.moveTo(centerX, canopyTopY);
+                ctx.lineTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.closePath();
+                ctx.fill();
+
+                // Adiciona uma "linha" pixelada na borda de cada segmento
+                ctx.fillStyle = darkenColor(u.color, 40);
+                const segWidth = Math.abs(x2 - x1);
+                const segHeight = canopyBottomY - canopyTopY;
+                ctx.fillRect(Math.min(x1, x2), canopyBottomY - pixelSize, segWidth, pixelSize); // Borda inferior
+            }
+        }
+
+
+        function darkenColor(hex, percent) {
+            if (!hex || hex.length < 7) return '#000000';
+            const f = parseInt(hex.slice(1), 16);
+            const R = (f >> 16) * (1 - percent / 100);
+            const G = ((f >> 8) & 0x00FF) * (1 - percent / 100);
+            const B = (f & 0x0000FF) * (1 - percent / 100);
+            return "#" + (0x1000000 + (Math.floor(R) << 16) + (Math.floor(G) << 8) + Math.floor(B)).toString(16).slice(1);
+        }
+
+        function updateAndDrawBackgroundElements() {
+            const levelData = levels[currentLevelIndex];
+            if (levelData.name.includes('Céu')) {
+                clouds.forEach(cloud => {
+                    cloud.x += cloud.speed;
+                    if (cloud.x > canvas.width + cloud.size) cloud.x = -cloud.size;
+                    drawPixelCloud(cloud.x, cloud.y, cloud.size, cloud.opacity); // Funções pixeladas
+                });
+            } else if (levelData.name.includes('Deserto')) {
+                dunes.forEach(dune => {
+                    drawPixelDune(dune.x, dune.y, dune.width, dune.height, dune.color);
+                });
+                cacti.forEach(cactus => {
+                    drawPixelCactus(cactus.x, cactus.y, cactus.height);
+                });
+            } else if (levelData.name.includes('Oceano')) {
+                drawPixelWaterBubbles();
+            } else if (levelData.name.includes('Gelo')) {
+                icebergs.forEach(iceberg => {
+                    drawPixelIceberg(iceberg.x, iceberg.y, iceberg.size, iceberg.opacity);
+                });
+                snowflakes.forEach(flake => {
+                    drawPixelSnowflake(flake.x, flake.y, flake.size, flake.opacity);
+                    flake.y += flake.speedY;
+                    flake.x += flake.speedX;
+                    if (flake.y > canvas.height) flake.y = -flake.size;
+                });
+            } else if (levelData.name.includes('Espaço')) {
+                drawPixelStars();
+                drawPixelNebulas();
+            }
+            drawVignette(); // Manter a vinheta como efeito geral
+        }
+
+        function drawVignette() {
+            const gradient = ctx.createRadialGradient(
+                canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.3,
+                canvas.width / 2, canvas.height / 2, Math.min(canvas.width, canvas.height) * 0.8
+            );
+            gradient.addColorStop(0, 'rgba(0,0,0,0)');
+            gradient.addColorStop(1, 'rgba(0,0,0,0.4)');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Funções de desenho pixeladas
+        function drawPixelCloud(x, y, size, opacity) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            const s = size / 10; // Escala para pixels
+            ctx.fillRect(Math.floor(x), Math.floor(y), s * 6, s * 4);
+            ctx.fillRect(Math.floor(x + s * 3), Math.floor(y - s * 2), s * 5, s * 3);
+            ctx.fillRect(Math.floor(x + s * 6), Math.floor(y), s * 4, s * 5);
+        }
+
+        function drawPixelCactus(x, y, height) {
+            ctx.fillStyle = '#228B22';
+            const h = height / 10;
+            ctx.fillRect(Math.floor(x), Math.floor(y), 10, h * 7); // Tronco
+            ctx.fillRect(Math.floor(x - 5), Math.floor(y + h * 3), 10, h * 2); // Braço esquerdo
+            ctx.fillRect(Math.floor(x + 5), Math.floor(y + h * 5), 10, h * 2); // Braço direito
+        }
+
+        function drawPixelDune(x, y, width, height, color) {
+            ctx.fillStyle = color;
+            const w = width / 10;
+            const h = height / 10;
+            ctx.fillRect(Math.floor(x), Math.floor(y), w * 10, h * 10);
+            // Curva superior com blocos
+            ctx.fillRect(Math.floor(x + w * 2), Math.floor(y - h * 2), w * 6, h * 2);
+            ctx.fillRect(Math.floor(x + w * 3), Math.floor(y - h * 3), w * 4, h * 1);
+        }
+
+        function drawPixelStars() {
+            stars.forEach(star => {
+                ctx.fillStyle = `rgba(255, 255, 255, ${star.opacity})`;
+                ctx.fillRect(Math.floor(star.x), Math.floor(star.y), Math.floor(star.size), Math.floor(star.size));
+                star.y += star.speed;
+                if (star.y > canvas.height) star.y = 0;
+            });
+        }
+
+        function drawPixelNebulas() {
+            nebulas.forEach(nebula => {
+                // Para pixel art, podemos simplificar nebulosas como grandes blocos transparentes coloridos
+                ctx.fillStyle = nebula.color.replace(/,\s*([\d.]+)\)/, `, ${nebula.opacity})`); // Ajusta opacidade para o pixel
+                ctx.fillRect(Math.floor(nebula.x), Math.floor(nebula.y), nebula.radius * 2, nebula.radius * 1.5);
+                nebula.x += nebula.speed;
+                if (nebula.x < -nebula.radius * 2) nebula.x = canvas.width + nebula.radius * 2;
+            });
+        }
+
+        function drawPixelIceberg(x, y, size, opacity) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            const s = size / 10;
+            ctx.fillRect(Math.floor(x), Math.floor(y), s * 10, s * 4);
+            ctx.fillRect(Math.floor(x + s * 2), Math.floor(y - s * 3), s * 6, s * 3);
+        }
+
+        function drawPixelSnowflake(x, y, size, opacity) {
+            ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+            const s = Math.floor(size);
+            ctx.fillRect(Math.floor(x), Math.floor(y), s, s);
+            ctx.fillRect(Math.floor(x - s), Math.floor(y), s, s);
+            ctx.fillRect(Math.floor(x + s), Math.floor(y), s, s);
+            ctx.fillRect(Math.floor(x), Math.floor(y - s), s, s);
+            ctx.fillRect(Math.floor(x), Math.floor(y + s), s, s);
+        }
+
+        function drawPixelWaterBubbles() {
+            waterBubbles.forEach(bubble => {
+                ctx.fillStyle = `rgba(173, 216, 230, ${bubble.opacity})`;
+                const s = Math.floor(bubble.size / 2); // Tamanho do pixel da bolha
+                ctx.fillRect(Math.floor(bubble.x), Math.floor(bubble.y), s, s);
+                bubble.y -= bubble.speed;
+                if (bubble.y < -bubble.size) {
+                    bubble.y = canvas.height + Math.random() * 100;
+                    bubble.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+
+        function checkLevelTransition() {
+            const currentLevelData = levels[currentLevelIndex];
+            if (score >= currentLevelData.nextLevelScore && currentLevelIndex < levels.length - 1 && !transitionActive) {
+                startTransition(currentLevelIndex + 1);
+            }
+            else if (score >= currentLevelData.nextLevelScore && currentLevelIndex === levels.length - 1 && !transitionActive) {
+                endGame(true);
+            }
+        }
+
+        function startTransition(newLevelIndex) {
+            transitionActive = true;
+            gameActive = false;
+            cancelAnimationFrame(gameLoopRAF);
+            const newLevelData = levels[newLevelIndex];
+
+            levelElement.innerHTML = `NÍVEL: ${newLevelData.name.toUpperCase()} | PRÓXIMO: ${newLevelData.nextLevelScore} PONTOS`;
+            soundSystem.play("levelUp");
+
+            setTimeout(() => {
+                completeTransition(newLevelIndex);
+                gameLoopRAF = requestAnimationFrame(gameLoop);
+            }, 2000);
+        }
+
+        function completeTransition(newLevelIndex) {
+            currentLevelIndex = newLevelIndex;
+            transitionActive = false;
+            transitionProgress = 0;
+            gameActive = true;
+
+            const currentLevelData = levels[currentLevelIndex];
+            levelElement.innerHTML = `NÍVEL: ${currentLevelData.name.toUpperCase()} | PRÓXIMO: ${currentLevelData.nextLevelScore} PONTOS`;
+
+            currentUmbrellas = [];
+            currentParticles = [];
+            floatingTexts = [];
+            initializeLevelElements();
+
+            // === INTEGRAÇÃO COM RANKING ===
+            updateMissionProgress('exploradorCompleto', null, { levelName: currentLevelData.name });
+            updateMissionProgress('conquistadorCosmos', 1, { levelName: currentLevelData.name });
+            // === FIM DA INTEGRAÇÃO ===
+        }
+
+        function endGame(win) {
+            gameActive = false;
+            isPaused = true;
+            cancelAnimationFrame(gameLoopRAF);
+            soundSystem.stop("background");
+
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem('highscore', highscore);
+            }
+            highscoreElement.textContent = highscore;
+
+            // === INTEGRAÇÃO COM RANKING (Final de Jogo) ===
+            updateMissionProgress('pontuadorMestre', score); // Atualiza a missão de pontuação
+            updateMissionProgress('vidaExtra', 1, { livesRemaining: lives }); // Atualiza missão de vidas restantes
+
+            if (win) {
+                updateMissionProgress('imbativel', 1, { winStatus: true }); // Atualiza a missão de vitória
+                finalScoreWinElement.textContent = `PONTUAÇÃO FINAL: ${score}`;
+                gameWinScreen.style.display = 'flex';
+                setTimeout(() => gameWinScreen.classList.add('active'), 10);
+            } else {
+                soundSystem.play("gameOver");
+                finalScoreElement.textContent = `PONTUAÇÃO: ${score}`;
+                finalLevelElement.textContent = `NÍVEL ALCANÇADO: ${levels[currentLevelIndex].name.toUpperCase()}`;
+                gameOverScreen.style.display = 'flex';
+                setTimeout(() => gameOverScreen.classList.add('active'), 10);
+            }
+            // === FIM DA INTEGRAÇÃO ===
+
+            // Esconde os controles e painéis do jogo
+            document.querySelector('.top-right-controls').style.display = 'none';
+            canvas.style.display = 'none';
+            missionDisplay.style.display = 'none';
+            applyMenuBackground();
+        }
+
+        function resetGame() {
+            score = 0;
+            lives = 5;
+            currentLevelIndex = 0;
+            transitionActive = false;
+            transitionProgress = 0;
+            gameActive = true;
+            isPaused = false;
+
+            currentUmbrellas = [];
+            currentParticles = [];
+            floatingTexts = [];
+            initializeLevelElements();
+
+            // === INTEGRAÇÃO COM RANKING (Reset de Jogo) ===
+            resetPerMatchMissions(); // Reseta missões por partida
+            // Garante que o estado inicial para 'visitAllLevels' reflita o nível 'Céu'
+            updateMissionProgress('exploradorCompleto', null, { levelName: 'Céu' });
+            // === FIM DA INTEGRAÇÃO ===
+
+            gameOverScreen.classList.remove('active');
+            gameWinScreen.classList.remove('active');
+            pauseScreen.classList.remove('active');
+            startScreen.classList.remove('active');
+            settingsScreen.classList.remove('active');
+            versionSelectScreen.classList.remove('active');
+            rankingMissionsSelectScreen.classList.remove('active'); // NOVO
+            missionsScreen.classList.remove('active'); // NOVO
+
+            uiElement.style.textShadow = '2px 2px 4px rgba(0,0,0,0.5)';
+
+            scoreElement.textContent = score;
+            livesElement.textContent = lives;
+            levelElement.innerHTML = `NÍVEL: ${levels[0].name.toUpperCase()} | PRÓXIMO: ${levels[0].nextLevelScore} PONTOS`;
+            highscoreElement.textContent = highscore;
+
+            gameOverScreen.style.display = 'none';
+            gameWinScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            startScreen.style.display = 'none';
+            settingsScreen.style.display = 'none';
+            versionSelectScreen.style.display = 'none';
+            rankingMissionsSelectScreen.style.display = 'none'; // NOVO
+            missionsScreen.style.display = 'none'; // NOVO
+            canvas.style.display = 'block';
+
+            // Mostra os controles do jogo
+            document.querySelector('.top-right-controls').style.display = 'flex';
+            if (missionsDisplayVisible) { // Só mostra o display de missões se estava visível antes
+                missionDisplay.style.display = 'block';
+            }
+
+            renderActiveMissions();
+            soundSystem.play("background");
+
+            if (gameLoopRAF) cancelAnimationFrame(gameLoopRAF);
+            gameLoopRAF = requestAnimationFrame(gameLoop);
+        }
+
+        function returnToStartScreen() {
+            gameActive = false;
+            isPaused = true;
+            cancelAnimationFrame(gameLoopRAF);
+            soundSystem.stop("background");
+
+            gameOverScreen.classList.remove('active');
+            gameWinScreen.classList.remove('active');
+            pauseScreen.classList.remove('active');
+            settingsScreen.classList.remove('active');
+            versionSelectScreen.classList.remove('active');
+            rankingMissionsSelectScreen.classList.remove('active'); // NOVO
+            missionsScreen.classList.remove('active'); // NOVO
+
+            gameOverScreen.style.display = 'none';
+            gameWinScreen.style.display = 'none';
+            pauseScreen.style.display = 'none';
+            canvas.style.display = 'none';
+            missionsScreen.style.display = 'none';
+
+            // Esconde os controles e painéis do jogo
+            document.querySelector('.top-right-controls').style.display = 'none';
+            missionDisplay.style.display = 'none';
+
+            startScreen.style.display = 'flex';
+            setTimeout(() => startScreen.classList.add('active'), 10);
+            applyMenuBackground();
+            soundSystem.play("menu");
+        }
+
+        function togglePause() {
+            soundSystem.play("click");
+            isPaused = !isPaused;
+            if (isPaused) {
+                cancelAnimationFrame(gameLoopRAF);
+                soundSystem.stop("background");
+                pauseScreen.style.display = 'flex';
+                setTimeout(() => pauseScreen.classList.add('active'), 10);
+                pauseBtn.textContent = 'RESUME';
+                missionsToggleButton.style.display = 'none'; // Esconde o botão de missões na pausa
+                missionDisplay.style.display = 'none'; // Esconde o display de missões na pausa
+                applyMenuBackground();
+            } else {
+                gameLoopRAF = requestAnimationFrame(gameLoop);
+                soundSystem.play("background");
+                pauseScreen.classList.remove('active');
+                pauseScreen.addEventListener('transitionend', function handler() {
+                    pauseScreen.style.display = 'none';
+                    pauseScreen.removeEventListener('transitionend', handler);
+                });
+                pauseBtn.textContent = 'PAUSE';
+                missionsToggleButton.style.display = 'block'; // Mostra o botão de missões ao retomar
+                if (missionsDisplayVisible) { // Só mostra se estava visível antes da pausa
+                    missionDisplay.style.display = 'block';
+                }
+            }
+        }
+
+        // Função para alternar a visibilidade do painel de missões (in-game)
+        function toggleMissionsDisplay() {
+            soundSystem.play("click");
+            missionsDisplayVisible = !missionsDisplayVisible;
+            if (missionsDisplayVisible) {
+                missionDisplay.style.display = 'block';
+                renderActiveMissions(); // Renderiza novamente para garantir atualização
+            } else {
+                missionDisplay.style.display = 'none';
+            }
+        }
+
+
+        function isClickInsideUmbrella(x, y, u) {
+            const hitZoneModifier = (1 - touchSensitivity) * 30;
+            const effectiveX = u.x - hitZoneModifier / 2;
+            const effectiveY = u.y - hitZoneModifier / 2;
+            const effectiveWidth = u.width + hitZoneModifier;
+            const effectiveHeight = u.height + hitZoneModifier;
+
+            return (
+                x >= effectiveX && x <= effectiveX + effectiveWidth &&
+                y >= effectiveY && y <= effectiveY + effectiveHeight
+            );
+        }
+
+        function handleClick(x, y) {
+            // Remove a chamada de soundSystem.enableAudioContext() daqui
+            // para que a habilitação do áudio ocorra na primeira interação, mas não bloqueie o clique.
+            // A habilitação ocorrerá nos event listeners globais.
+
+            if (!gameActive || transitionActive || isPaused) return;
+
+            const levelData = levels[currentLevelIndex];
+
+            for (let i = currentUmbrellas.length - 1; i >= 0; i--) {
+                const u = currentUmbrellas[i];
+                if (isClickInsideUmbrella(x, y, u)) {
+                    soundSystem.play("click"); // Este som agora só tocará se o áudio estiver habilitado
+                    if (navigator.vibrate) navigator.vibrate(50);
+
+                    score += levelData.scoreValue;
+                    scoreElement.textContent = score;
+
+                    createFloatingText(`+${levelData.scoreValue}`, u.x + u.width / 2, u.y + u.height / 2);
+
+                    let particleColor = u.color;
+                    if (levelData.name.includes('Deserto')) particleColor = '#FFD700';
+                    else if (levelData.name.includes('Gelo')) particleColor = '#F0F8FF';
+                    else if (levelData.name.includes('Espaço')) particleColor = '#00ffff';
+
+                    createParticles(u.x + u.width/2, u.y + u.height/2, particleColor, 25);
+
+                    // === INTEGRAÇÃO COM RANKING (Cliques e Pontos) ===
+                    updateMissionProgress('colecionadorAgil', 1);
+                    // Passa o score acumulado para a missão 'pontuadorMestre'
+                    updateMissionProgress('pontuadorMestre', levelData.scoreValue);
+                    // A missão 'novatoCeu' só deve ser atualizada se estiver no nível "Céu"
+                    if (levels[currentLevelIndex].name === 'Céu') {
+                        updateMissionProgress('novatoCeu', levelData.scoreValue, { levelName: 'Céu' });
+                    }
+                    // Verifica se a cor do guarda-chuva clicado está na lista de cores azuis para a missão
+                    if (levels[currentLevelIndex].name === 'Oceano' && defaultMissions.find(m => m.id === 'mergulhadorProfundo').color.includes(u.color)) {
+                        updateMissionProgress('mergulhadorProfundo', 1, { clickedColor: u.color });
+                    }
+                    // === FIM DA INTEGRAÇÃO ===
+
+                    currentUmbrellas.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        function createParticles(x, y, color, count = 15) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 1 + Math.random() * 4;
+
+                currentParticles.push({
+                    x: x,
+                    y: y,
+                    radius: 3 + Math.random() * 5,
+                    color: color,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - 2,
+                    life: 50 + Math.random() * 50
+                });
+            }
+        }
+
+        function updateParticles() {
+            for (let i = currentParticles.length - 1; i >= 0; i--) {
+                const p = currentParticles[i];
+
+                p.x = Math.floor(p.x + p.vx);
+                p.y = Math.floor(p.y + p.vy);
+                p.vy += 0.05;
+                p.life--;
+
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life / 100;
+                ctx.fillRect(Math.floor(p.x), Math.floor(p.y), Math.floor(p.radius / 2) + 1, Math.floor(p.radius / 2) + 1); // Desenha como pixel
+                
+                if (p.life <= 0) {
+                    currentParticles.splice(i, 1);
+                }
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        function createFloatingText(text, x, y) {
+            floatingTexts.push({
+                text: text,
+                x: x,
+                y: y,
+                alpha: 1.0,
+                vy: -1,
+                life: 60
+            });
+        }
+
+        function updateFloatingTexts() {
+            for (let i = floatingTexts.length - 1; i >= 0; i--) {
+                const textObj = floatingTexts[i];
+                textObj.y += textObj.vy;
+                textObj.alpha -= 1.0 / textObj.life;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, textObj.alpha);
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 20px "Press Start 2P"'; // Fonte pixel art
+                ctx.textAlign = 'center';
+                ctx.shadowColor = 'black';
+                ctx.shadowBlur = 0; // Sem blur para pixel art
+                ctx.fillText(textObj.text, Math.floor(textObj.x), Math.floor(textObj.y));
+                ctx.restore();
+
+                textObj.life--;
+                if (textObj.life <= 0) {
+                    floatingTexts.splice(i, 1);
+                }
+            }
+        }
+
+        function gameLoop(timestamp) {
+            gameLoopRAF = requestAnimationFrame(gameLoop);
+
+            if (!gameActive || isPaused) return;
+
+            const deltaTime = timestamp - lastTime;
+            if (deltaTime < frameInterval) {
+                // Atualiza missões de tempo mesmo que não renderize o frame para precisão
+                const timeInSeconds = deltaTime / 1000;
+                updateMissionProgress('aventureiroDeserto', timeInSeconds, { levelName: levels[currentLevelIndex].name });
+                updateMissionProgress('resistenciaGelida', timeInSeconds, { levelName: levels[currentLevelIndex].name });
+                return;
+            }
+            lastTime = timestamp - (deltaTime % frameInterval);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            updateAndDrawBackgroundElements();
+            checkLevelTransition();
+
+            if (transitionActive) {
+                // drawTransition(); // Você não tem essa função implementada
+            } else {
+                const levelData = levels[currentLevelIndex];
+                if (Math.random() < levelData.spawnRate + (score / 300000)) {
+                    createUmbrella();
+                }
+
+                for (let i = currentUmbrellas.length - 1; i >= 0; i--) {
+                    const u = currentUmbrellas[i];
+                    u.y += u.speed;
+                    drawUmbrella(u);
+
+                    if (u.y > canvas.height + u.height) {
+                        currentUmbrellas.splice(i, 1);
+                        lives--;
+                        soundSystem.play("life");
+                        livesElement.textContent = lives;
+                        if (lives <= 0) {
+                            endGame(false);
+                            return;
+                        }
+                    }
+                }
+                // === INTEGRAÇÃO COM RANKING (Missões de Tempo) ===
+                // Para missões de tempo, adicione o progresso a cada frame
+                const timeInSeconds = deltaTime / 1000;
+                updateMissionProgress('aventureiroDeserto', timeInSeconds, { levelName: levels[currentLevelIndex].name });
+                updateMissionProgress('resistenciaGelida', timeInSeconds, { levelName: levels[currentLevelIndex].name });
+                // === FIM DA INTEGRAÇÃO ===
+            }
+
+            updateParticles();
+            updateFloatingTexts();
+            scoreElement.textContent = score;
+        }
+
+        // ===== EVENT LISTENERS =====
+        function getTouchPos(canvasDom, touchEvent) {
+            const rect = canvasDom.getBoundingClientRect();
+            return {
+                x: touchEvent.touches[0].clientX - rect.left,
+                y: touchEvent.touches[0].clientY - rect.top
+            };
+        }
+
+        // MODIFICAÇÃO AQUI: Garante que a primeira interação do usuário (qualquer clique/toque no documento)
+        // habilite o contexto de áudio.
+        function handleFirstUserInteraction() {
+            soundSystem.enableAudioContext();
+            document.removeEventListener('click', handleFirstUserInteraction);
+            document.removeEventListener('touchstart', handleFirstUserInteraction);
+            console.log("Primeira interação do usuário detectada.");
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            // Adiciona listeners para a primeira interação do usuário para habilitar áudio
+            document.addEventListener('click', handleFirstUserInteraction, { once: true });
+            document.addEventListener('touchstart', handleFirstUserInteraction, { once: true });
+        });
+
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            handleClick(e.clientX - rect.left, e.clientY - rect.top);
+        });
+
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const touchPos = getTouchPos(canvas, e);
+            handleClick(touchPos.x, touchPos.y);
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+        }, { passive: false });
+
+        restartBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            resetGame();
+        });
+
+        playAgainWinBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            resetGame();
+        });
+
+        pauseBtn.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+        backToStartBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            returnToStartScreen();
+        });
+
+        // Event listener para o botão de alternar missões (in-game)
+        missionsToggleButton.addEventListener('click', toggleMissionsDisplay);
+
+        startButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            soundSystem.stop("menu");
+
+            startScreen.classList.remove('active');
+            startScreen.addEventListener('transitionend', function handler() {
+                startScreen.style.display = 'none';
+                startScreen.removeEventListener('transitionend', handler);
+                resetGame();
+            });
+        });
+
+        settingsButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            soundSystem.stop("menu");
+
+            startScreen.classList.remove('active');
+            startScreen.addEventListener('transitionend', function handler() {
+                startScreen.style.display = 'none';
+                startScreen.removeEventListener('transitionend', handler);
+                settingsScreen.style.display = 'flex';
+                setTimeout(() => settingsScreen.classList.add('active'), 10);
+                applyMenuBackground();
+                updateSettingsUI();
+            });
+        });
+
+        settingsBackBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            settingsScreen.classList.remove('active');
+            settingsScreen.addEventListener('transitionend', function handler() {
+                settingsScreen.style.display = 'none';
+                settingsScreen.removeEventListener('transitionend', handler);
+                startScreen.style.display = 'flex';
+                setTimeout(() => startScreen.classList.add('active'), 10);
+                applyMenuBackground();
+                soundSystem.play("menu");
+            });
+        });
+
+        // Event Listener para o botão de Ranking (NOVO FLUXO)
+        rankingButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            soundSystem.stop("menu");
+
+            startScreen.classList.remove('active');
+            startScreen.addEventListener('transitionend', function handler() {
+                startScreen.style.display = 'none';
+                startScreen.removeEventListener('transitionend', handler);
+                rankingMissionsSelectScreen.style.display = 'flex'; // Abre a nova tela de seleção
+                setTimeout(() => rankingMissionsSelectScreen.classList.add('active'), 10);
+                applyMenuBackground();
+            });
+        });
+
+        // Event Listeners para a nova tela de Ranking/Missões (NOVO)
+        rankingGeneralBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            window.location.href = 'ranking.html'; // Redireciona para a página de ranking
+        });
+
+        viewMissionsBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            rankingMissionsSelectScreen.classList.remove('active');
+            rankingMissionsSelectScreen.addEventListener('transitionend', function handler() {
+                rankingMissionsSelectScreen.style.display = 'none';
+                rankingMissionsSelectScreen.removeEventListener('transitionend', handler);
+                missionsScreen.style.display = 'flex'; // Abre a tela de missões
+                setTimeout(() => missionsScreen.classList.add('active'), 10);
+                renderAllMissions(); // Renderiza todas as missões
+            });
+        });
+
+        rankingMissionsBackBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            rankingMissionsSelectScreen.classList.remove('active');
+            rankingMissionsSelectScreen.addEventListener('transitionend', function handler() {
+                rankingMissionsSelectScreen.style.display = 'none';
+                rankingMissionsSelectScreen.removeEventListener('transitionend', handler);
+                startScreen.style.display = 'flex';
+                setTimeout(() => startScreen.classList.add('active'), 10);
+                applyMenuBackground();
+                soundSystem.play("menu");
+            });
+        });
+
+        // Event Listener para a tela de Missões (NOVO)
+        missionsBackBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            missionsScreen.classList.remove('active');
+            missionsScreen.addEventListener('transitionend', function handler() {
+                missionsScreen.style.display = 'none';
+                missionsScreen.removeEventListener('transitionend', handler);
+                rankingMissionsSelectScreen.style.display = 'flex'; // Volta para a tela de seleção
+                setTimeout(() => rankingMissionsSelectScreen.classList.add('active'), 10);
+                applyMenuBackground();
+            });
+        });
+
+
+        versionsButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            soundSystem.stop("menu");
+
+            startScreen.classList.remove('active');
+            startScreen.addEventListener('transitionend', function handler() {
+                startScreen.style.display = 'none';
+                startScreen.removeEventListener('transitionend', handler);
+                versionSelectScreen.style.display = 'flex';
+                setTimeout(() => versionSelectScreen.classList.add('active'), 10);
+                applyMenuBackground();
+            });
+        });
+
+        versionBackBtn.addEventListener('click', () => {
+            soundSystem.play("click");
+            versionSelectScreen.classList.remove('active');
+            versionSelectScreen.addEventListener('transitionend', function handler() {
+                versionSelectScreen.style.display = 'none';
+                versionSelectScreen.removeEventListener('transitionend', handler);
+                startScreen.style.display = 'flex';
+                setTimeout(() => startScreen.classList.add('active'), 10);
+                applyMenuBackground();
+                soundSystem.play("menu");
+            });
+        });
+
+        silverButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            alert('Você clicou em Prata! (Esta versão não está implementada neste arquivo)');
+        });
+
+        goldButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            alert('Você clicou em Ouro! (Esta versão não está implementada neste arquivo)');
+        });
+
+        emeraldButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            alert('Você clicou em Esmeralda! (Esta versão não está implementada neste arquivo)');
+        });
+
+        diamondButton.addEventListener('click', () => {
+            soundSystem.play("click");
+            window.location.href = 'index2.html';
+        });
+
+        // ===== CONFIGURAÇÕES =====
+        function updateSettingsUI() {
+            touchSensitivitySlider.value = touchSensitivity;
+            sensitivityValueSpan.textContent = touchSensitivity.toFixed(1);
+            updateColorSwatchSelection();
+        }
+
+        function updateColorSwatchSelection() {
+            colorSwatches.forEach(swatch => {
+                swatch.classList.remove('selected');
+                if (swatch.dataset.color === currentBackgroundPreset) {
+                    swatch.classList.add('selected');
+                }
+            });
+        }
+
+        colorSwatches.forEach(swatch => {
+            swatch.addEventListener('click', () => {
+                soundSystem.play("click");
+                const colorPreset = swatch.dataset.color;
+                currentBackgroundPreset = colorPreset;
+                localStorage.setItem('backgroundPreset', currentBackgroundPreset);
+                applyMenuBackground();
+                updateColorSwatchSelection();
+            });
+        });
+
+        touchSensitivitySlider.addEventListener('input', (e) => {
+            touchSensitivity = parseFloat(e.target.value);
+            localStorage.setItem('touchSensitivity', touchSensitivity);
+            sensitivityValueSpan.textContent = touchSensitivity.toFixed(1);
+        });
+
+        // ===== INICIALIZAÇÃO =====
+        function initGameOnLoad() {
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+
+            loadAchievementData();
+            highscoreElement.textContent = highscore;
+
+            // Inicia os controles e painéis do jogo escondidos
+            document.querySelector('.top-right-controls').style.display = 'none';
+            missionDisplay.style.display = 'none';
+            missionCompleteNotification.style.display = 'none'; // Garante que a notificação esteja escondida no início
+
+            applyMenuBackground();
+            updateSettingsUI();
+            renderActiveMissions(); // Para o painel in-game
+            renderAllMissions(); // Para a nova tela de missões
+
+            // MODIFICAÇÃO AQUI: A splash screen agora some por tempo, não dependendo do áudio.
+            setTimeout(() => {
+                splashScreen.classList.add('hidden');
+                splashScreen.addEventListener('transitionend', function handler() {
+                    splashScreen.style.display = 'none';
+                    startScreen.style.display = 'flex';
+                    setTimeout(() => startScreen.classList.add('active'), 10);
+                    // O áudio do menu só é tocado AQUI se o contexto de áudio já estiver habilitado
+                    // (o que ocorrerá após a primeira interação do usuário)
+                    if (soundSystem.isAudioEnabled) {
+                        soundSystem.play("menu");
+                    }
+                    splashScreen.removeEventListener('transitionend', handler);
+                }, {once: true}); // Garante que o handler seja executado apenas uma vez
+            }, 1500); // A splash screen desaparece após 1.5 segundos
+        }
+
+        window.addEventListener('load', initGameOnLoad);
+    </script>
+</body>
+</html>
