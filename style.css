@@ -1,0 +1,448 @@
+body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Press Start 2P', cursive;
+            background-image: url('fundo1.png');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            position: relative;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            width: 100vw;
+            image-rendering: optimizeSpeed;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+        canvas {
+            display: none;
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: optimize-contrast;
+            -ms-interpolation-mode: nearest-neighbor;
+        }
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        #ui {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            color: white;
+            font-size: 16px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+            z-index: 101;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: none;
+        }
+        #level-indicator {
+            font-size: 12px;
+            color: #ADD8E6;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+            margin-top: 2px;
+        }
+        #game-over, #game-win, #pause-screen, #settings-screen, #version-select-screen, #ranking-missions-select-screen, #missions-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 200;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #game-over.active, #game-win.active, #pause-screen.active, #settings-screen.active, #version-select-screen.active, #ranking-missions-select-screen.active, #missions-screen.active {
+            opacity: 1;
+        }
+        #game-over h1, #game-win h1, #pause-screen h1, #settings-screen h1, #version-select-screen h1, #ranking-missions-select-screen h1, #missions-screen h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 0px rgba(0,0,0,0.7);
+        }
+        #game-over h1 { color: #FF5252; }
+        #game-win h1 { color: #4CAF50; text-shadow: 3px 3px 0px rgba(0, 255, 0, 0.7); animation: win-pulse 1.5s infinite; }
+        @keyframes win-pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }
+        #restart-btn, #play-again-win-btn, #pause-btn, #resume-btn, .game-button, #settings-back-btn, #back-to-start-btn, .version-button, #version-back-btn, #ranking-button, #ranking-general-btn, #view-missions-btn, #ranking-missions-back-btn, #missions-back-btn {
+            margin-top: 20px;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background: linear-gradient(45deg, #FF5252, #FF9800);
+            color: white;
+            border: 2px solid #333;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.5);
+            transition: all 0.1s;
+            text-decoration: none;
+            display: inline-block;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .game-button:hover, #settings-back-btn:hover, #back-to-start-btn:hover, .version-button:hover, #version-back-btn:hover, #ranking-button:hover, #ranking-general-btn:hover, #view-missions-btn:hover, #ranking-missions-back-btn:hover, #missions-back-btn:hover {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
+        }
+        .top-right-controls {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            display: flex;
+            gap: 5px;
+            z-index: 101;
+        }
+        .top-right-controls button {
+            padding: 6px 10px;
+            font-size: 0.9em;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: 1px solid #555;
+            border-radius: 3px;
+            cursor: pointer;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+            transition: background 0.1s, transform 0.1s;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .top-right-controls button:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translate(0.5px, 0.5px);
+        }
+        #start-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #start-screen.active {
+            opacity: 1;
+        }
+        #start-title {
+            font-size: 2.8rem;
+            color: white;
+            text-shadow: 4px 4px 0px rgba(0, 0, 0, 0.7);
+            margin-bottom: 30px;
+            animation: pulse 2s infinite;
+        }
+        .start-button {
+            background: linear-gradient(45deg, #FF5252, #FF9800);
+            color: white;
+            border: 2px solid #333;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.5);
+            transition: all 0.1s;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .start-button:hover {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
+        }
+        .settings-option {
+            margin-bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 80%;
+            max-width: 400px;
+        }
+        .settings-option label {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            color: #FFF;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        .color-palettes {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .color-swatch {
+            width: 30px;
+            height: 30px;
+            border-radius: 3px;
+            border: 2px solid rgba(255,255,255,0.7);
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+        }
+        .color-swatch:hover {
+            transform: scale(1.05);
+            box-shadow: 2px 2px 0px rgba(255,255,255,0.8);
+        }
+        .color-swatch.selected {
+            border: 2px solid #4CAF50;
+            box-shadow: 2px 2px 0px #4CAF50;
+            transform: scale(1.1);
+        }
+        input[type="range"] {
+            width: 100%;
+            -webkit-appearance: none;
+            height: 8px;
+            background: #d3d3d3;
+            outline: none;
+            opacity: 0.7;
+            -webkit-transition: .2s;
+            transition: opacity .2s;
+            border-radius: 2px;
+            margin-top: 10px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 3px;
+            background: #4CAF50;
+            cursor: pointer;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+        }
+        #sensitivity-value {
+            font-size: 1em;
+            margin-top: 5px;
+        }
+        .pause-buttons, .version-buttons, .ranking-missions-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 2000;
+            color: white;
+            font-size: 2em;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+            transition: opacity 1s ease-out;
+            opacity: 1;
+            font-family: 'Press Start 2P', cursive;
+        }
+        #splash-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #splash-screen img {
+            width: 80px;
+            height: 80px;
+            animation: spin 1.5s linear infinite;
+            margin-bottom: 20px;
+            image-rendering: pixelated;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        #version-select-screen h1, #ranking-missions-select-screen h1, #missions-screen h1 {
+            color: #fff;
+            text-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
+        .version-button {
+            background: linear-gradient(45deg, #4285F4, #34A853);
+            color: white;
+            border: 2px solid #333;
+            padding: 10px 20px;
+            font-size: 1.2rem;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0px rgba(0, 0, 0, 0.3);
+            transition: all 0.1s;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+            min-width: 180px;
+            font-family: 'Press Start 2P', cursive;
+        }
+        .version-button:hover {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px rgba(0, 0, 0, 0.4);
+        }
+        #diamond-button {
+            background: linear-gradient(45deg, #00BCD4, #00C853);
+        }
+        #mission-display {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 5px;
+            padding: 8px 12px;
+            color: white;
+            font-size: 14px;
+            max-width: 220px;
+            max-height: 120px;
+            overflow-y: auto;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.8);
+            z-index: 101;
+            display: none;
+            font-family: 'Press Start 2P', cursive;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .mission-item-in-game {
+            margin-bottom: 5px;
+            line-height: 1.2;
+        }
+        .mission-item-in-game strong {
+            color: #FFC107;
+            font-size: 0.8em;
+        }
+        .mission-item-in-game .progress {
+            font-size: 0.7em;
+            color: #ADD8E6;
+        }
+        .mission-item-in-game.completed {
+            color: #8BC34A;
+            text-decoration: line-through;
+        }
+        .mission-item-in-game.completed strong {
+            color: #8BC34A;
+        }
+        #mission-complete-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            border: 2px solid #FFD700;
+            padding: 10px 20px;
+            color: white;
+            font-size: 1.2em;
+            text-align: center;
+            border-radius: 5px;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.6);
+            z-index: 300;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+            font-family: 'Press Start 2P', cursive;
+            white-space: pre-wrap;
+        }
+        #mission-complete-notification.show {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        #missions-screen .missions-category {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 20px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.5);
+            text-align: left;
+        }
+        #missions-screen .missions-category h2 {
+            font-size: 1.8em;
+            color: #FFC107;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 0px rgba(0,0,0,0.7);
+        }
+        #missions-screen .missions-list {
+            max-height: 300px;
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        #missions-screen .mission-item {
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid #555;
+            border-radius: 3px;
+            padding: 10px;
+            margin-bottom: 8px;
+            color: white;
+            font-size: 0.9em;
+            line-height: 1.3;
+            box-shadow: 1px 1px 0px rgba(0,0,0,0.3);
+        }
+        #missions-screen .mission-item strong {
+            color: #90EE90;
+            font-size: 1.1em;
+        }
+        #missions-screen .mission-item .description {
+            font-size: 0.8em;
+            color: #D3D3D3;
+        }
+        #missions-screen .mission-item .progress-rewards {
+            font-size: 0.75em;
+            color: #ADD8E6;
+            margin-top: 5px;
+        }
+        #missions-screen .mission-item.completed {
+            background: rgba(0, 100, 0, 0.5);
+            border-color: #008000;
+            color: #B0E0E6;
+            text-decoration: line-through;
+        }
+        #missions-screen .mission-item.completed strong {
+            color: #7CFC00;
+        }
+        #missions-screen .missions-list::-webkit-scrollbar {
+            width: 8px;
+        }
+        #missions-screen .missions-list::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 4px;
+        }
+        #missions-screen .missions-list::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 4px;
+        }
+        #missions-screen .missions-list::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
