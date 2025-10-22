@@ -650,12 +650,12 @@
             const color = levelData.umbrellaColors[Math.floor(Math.random() * levelData.umbrellaColors.length)];
             const speed = levelData.baseSpeed + (score / 20000);
             currentUmbrellas.push({
-                x: Math.floor(Math.random() * (canvas.width - 60)),
-                y: -60,
+                x: Math.floor(Math.random() * (canvas.width - 70)),
+                y: -70,
                 speed: speed,
                 color: color,
-                width: 60,
-                height: 70,
+                width: 90,
+                height: 100,
             });
         }
         function drawUmbrella(u) {
